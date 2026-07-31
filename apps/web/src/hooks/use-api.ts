@@ -1163,3 +1163,180 @@ export function useRsvpEvent() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["calendar"] }),
   });
 }
+
+/* ── Recruitment ───────────────────────────────────────────────── */
+
+export type OpeningRow = {
+  id: number;
+  title: string;
+  department: string | null;
+  department_id: number | null;
+  employment_type: string;
+  description: string | null;
+  status: "draft" | "open" | "closed";
+  openings_count: number;
+  applicants_count: number | null;
+  created_at: string;
+};
+
+export type ApplicantRow = {
+  id: number;
+  opening_id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  source: string | null;
+  stage: "applied" | "screening" | "interview" | "offer" | "hired" | "rejected";
+  rating: number | null;
+  notes: string | null;
+  hired: boolean;
+  created_at: string;
+};
+
+export function useOpenings() {
+  return useQuery({
+    queryKey: ["recruitment", "openings"],
+    queryFn: () => get<OpeningRow[]>("/hr/recruitment/openings").then((r) => r.data),
+  });
+}
+
+export function useApplicants(openingId: number | null) {
+  return useQuery({
+    queryKey: ["recruitment", "applicants", openingId],
+    queryFn: () =>
+      get<ApplicantRow[]>(`/hr/recruitment/openings/${openingId}/applicants`).then((r) => r.data),
+    enabled: openingId !== null,
+  });
+}
+
+export function useCreateOpening() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<OpeningRow>("/hr/recruitment/openings", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recruitment"] }),
+  });
+}
+
+export function useUpdateOpening() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number } & Record<string, unknown>) =>
+      patch<OpeningRow>(`/hr/recruitment/openings/${id}`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recruitment"] }),
+  });
+}
+
+export function useAddApplicant(openingId: number | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<ApplicantRow>(`/hr/recruitment/openings/${openingId}/applicants`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recruitment"] }),
+  });
+}
+
+export function useUpdateApplicant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; stage?: string; rating?: number | null; notes?: string }) =>
+      patch<ApplicantRow>(`/hr/recruitment/applicants/${id}`, payload).then((r) => r.data),
+    onMutate: async ({ id, stage }) => {
+      // Optimistic stage move for the pipeline board.
+      if (!stage) return {};
+      const key = ["recruitment", "applicants"];
+      await queryClient.cancelQueries({ queryKey: key });
+      const snapshots = queryClient.getQueriesData<ApplicantRow[]>({ queryKey: key });
+      for (const [qk, rows] of snapshots) {
+        if (rows) {
+          queryClient.setQueryData(
+            qk,
+            rows.map((row) => (row.id === id ? { ...row, stage: stage as ApplicantRow["stage"] } : row)),
+          );
+        }
+      }
+      return { snapshots };
+    },
+    onError: (_e, _v, context) => {
+      for (const [qk, rows] of context?.snapshots ?? []) queryClient.setQueryData(qk, rows);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["recruitment"] }),
+  });
+}
+
+export function useHireApplicant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, employee_code }: { id: number; employee_code: string }) =>
+      post<ApplicantRow & { employee_public_id: string }>(`/hr/recruitment/applicants/${id}/hire`, {
+        employee_code,
+      }).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recruitment"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    },
+  });
+}
+
+/* ── Performance (OKRs) ────────────────────────────────────────── */
+
+export type KeyResultRow = {
+  id: number;
+  title: string;
+  target_value: number;
+  current_value: number;
+  unit: string | null;
+  completion: number;
+};
+
+export type ObjectiveRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  period: string;
+  status: "active" | "completed" | "cancelled";
+  employee: string | null;
+  employee_id: number;
+  progress: number;
+  key_results: KeyResultRow[];
+  created_at: string;
+};
+
+export function useObjectives(scope: "mine" | "team") {
+  return useQuery({
+    queryKey: ["performance", scope],
+    queryFn: () =>
+      get<ObjectiveRow[]>(`/hr/performance/objectives?scope=${scope}`).then((r) => ({
+        objectives: r.data,
+        canViewAll: Boolean((r.meta as { can_view_all?: boolean } | undefined)?.can_view_all),
+        canManage: Boolean((r.meta as { can_manage?: boolean } | undefined)?.can_manage),
+      })),
+  });
+}
+
+export function useCreateObjective() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<ObjectiveRow>("/hr/performance/objectives", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance"] }),
+  });
+}
+
+export function useUpdateObjective() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; status?: string; title?: string }) =>
+      patch<ObjectiveRow>(`/hr/performance/objectives/${id}`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance"] }),
+  });
+}
+
+export function useCheckInKeyResult() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, current_value }: { id: number; current_value: number }) =>
+      patch<ObjectiveRow>(`/hr/performance/key-results/${id}`, { current_value }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance"] }),
+  });
+}

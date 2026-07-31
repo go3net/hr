@@ -25,7 +25,8 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 2 | HR: leave (types, balances, approval workflow) | ✅ | |
 | 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslip PDFs, adjustments, bank export CSV |
 | 2 | HR: onboarding docs, assets, exit | 📋 | |
-| 2 | HR: recruitment ATS, performance (KPI/OKR) | 📋 | |
+| 2 | HR: recruitment ATS | ✅ | Openings with slots/departments, drag-and-drop applicant pipeline (applied→screening→interview→offer→hired/rejected), star ratings, hire action that creates the employee record. CV uploads + interview scheduling next |
+| 2 | HR: performance (OKR) | ✅ | Objectives with measurable key results, capped-average progress, check-ins, mine/team scopes (hr.performance.view/manage). Review cycles + appraisal forms next |
 | 3 | Projects (kanban, milestones) | ✅ | Projects, members, milestones schema, drag-and-drop board. Sprints/Gantt/dependencies next |
 | 4 | Tasks | ✅ | Personal + project tasks, priorities, comments, my-tasks view. Recurring rules next |
 | 5 | CRM | ✅ | Leads → convert, clients, drag-and-drop deal pipeline with stage stats, activities/follow-ups. Proposals, WhatsApp/email send next |
@@ -54,7 +55,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Recruitment ATS + performance (KPI/OKR) to round out HR.
-2. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
-3. Inventory + LMS to complete the extended module set.
-4. Flutter mobile feature build-out against the stabilized API.
+1. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
+2. Inventory + LMS to complete the extended module set.
+3. Flutter mobile feature build-out against the stabilized API.
+4. HR round-out: onboarding checklists, asset assignment, exit workflows.

@@ -22,6 +22,8 @@ use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
 use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\PayrollController;
+use App\Modules\Hr\Http\PerformanceController;
+use App\Modules\Hr\Http\RecruitmentController;
 use App\Modules\Knowledge\Http\KnowledgeController;
 use App\Modules\Projects\Http\ProjectController;
 use App\Modules\Tasks\Http\TaskController;
@@ -103,6 +105,22 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::patch('/payroll/runs/{payrollRun}/items/{payrollItem}', [PayrollController::class, 'adjustItem']);
             Route::get('/payslips/mine', [PayrollController::class, 'myPayslips']);
             Route::get('/payslips/{payrollItem}/download', [PayrollController::class, 'downloadPayslip']);
+
+            // Recruitment ATS
+            Route::get('/recruitment/openings', [RecruitmentController::class, 'openings']);
+            Route::post('/recruitment/openings', [RecruitmentController::class, 'storeOpening']);
+            Route::patch('/recruitment/openings/{opening}', [RecruitmentController::class, 'updateOpening']);
+            Route::get('/recruitment/openings/{opening}/applicants', [RecruitmentController::class, 'applicants']);
+            Route::post('/recruitment/openings/{opening}/applicants', [RecruitmentController::class, 'storeApplicant']);
+            Route::patch('/recruitment/applicants/{applicant}', [RecruitmentController::class, 'updateApplicant']);
+            Route::post('/recruitment/applicants/{applicant}/hire', [RecruitmentController::class, 'hire']);
+
+            // Performance (OKRs)
+            Route::get('/performance/objectives', [PerformanceController::class, 'index']);
+            Route::post('/performance/objectives', [PerformanceController::class, 'store']);
+            Route::patch('/performance/objectives/{objective}', [PerformanceController::class, 'update']);
+            Route::delete('/performance/objectives/{objective}', [PerformanceController::class, 'destroy']);
+            Route::patch('/performance/key-results/{keyResult}', [PerformanceController::class, 'updateKeyResult']);
         });
 
         // Projects module
