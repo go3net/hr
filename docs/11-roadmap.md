@@ -24,7 +24,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 2 | HR: attendance (GPS geofence, QR, late detection) | ✅ | Biometric/face = integration points |
 | 2 | HR: leave (types, balances, approval workflow) | ✅ | |
 | 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslip PDFs, adjustments, bank export CSV |
-| 2 | HR: onboarding docs, assets, exit | 📋 | |
+| 2 | HR: onboarding, assets, exit | ✅ | Seeded onboarding checklists with progress; asset register (tags, assign/return with condition notes + history); exit workflows with clearance checklist — completion requires all tasks done and all assets returned, then marks the employee exited. Template editor + document collection next |
 | 2 | HR: recruitment ATS | ✅ | Openings with slots/departments, drag-and-drop applicant pipeline (applied→screening→interview→offer→hired/rejected), star ratings, hire action that creates the employee record. CV uploads + interview scheduling next |
 | 2 | HR: performance (OKR) | ✅ | Objectives with measurable key results, capped-average progress, check-ins, mine/team scopes (hr.performance.view/manage). Review cycles + appraisal forms next |
 | 3 | Projects (kanban, milestones) | ✅ | Projects, members, milestones schema, drag-and-drop board. Sprints/Gantt/dependencies next |
@@ -55,7 +55,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. HR round-out: onboarding checklists, asset assignment, exit workflows.
+1. White-label branding + custom roles CRUD.
 2. FCM push notifications (mobile + web).
 3. Flutter mobile feature build-out against the stabilized API.
-4. White-label branding + custom roles CRUD.
+4. Real dashboard chart endpoints (attendance/revenue trends currently sample-labeled).

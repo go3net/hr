@@ -124,6 +124,7 @@ class EmployeeController extends ApiController
     {
         return [
             'id' => $e->public_id,
+            'employee_id' => $e->id, // internal id for pickers (assets, objectives)
             'employee_code' => $e->employee_code,
             'name' => $e->full_name,
             'email' => $e->email,

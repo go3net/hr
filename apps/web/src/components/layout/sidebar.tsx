@@ -10,6 +10,8 @@ import {
   Banknote,
   BriefcaseBusiness,
   Target,
+  ClipboardList,
+  Laptop,
   FolderKanban,
   CheckSquare,
   HeartHandshake,
@@ -40,6 +42,8 @@ const nav = [
       { href: "/hr/payroll", icon: Banknote, name: "Payroll" },
       { href: "/hr/recruitment", icon: BriefcaseBusiness, name: "Recruitment" },
       { href: "/hr/performance", icon: Target, name: "Performance" },
+      { href: "/hr/onboarding", icon: ClipboardList, name: "Onboarding" },
+      { href: "/hr/assets", icon: Laptop, name: "Assets" },
     ],
   },
   {

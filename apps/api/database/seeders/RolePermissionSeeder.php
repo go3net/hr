@@ -36,6 +36,7 @@ class RolePermissionSeeder extends Seeder
             'knowledge.manage' => 'Author knowledge base articles',
             'calendar.manage' => 'Create company-wide calendar events',
             'hr.recruitment.manage' => 'Manage job openings and applicants',
+            'hr.assets.manage' => 'Manage company assets and assignments',
             'inventory.view' => 'View inventory',
             'inventory.manage' => 'Manage inventory items and stock',
             'lms.manage' => 'Author and publish courses',
@@ -59,7 +60,7 @@ class RolePermissionSeeder extends Seeder
                 'hr.payroll.view', 'hr.payroll.manage', 'documents.manage',
                 'helpdesk.manage', 'knowledge.manage', 'calendar.manage',
                 'hr.recruitment.manage', 'hr.performance.view', 'hr.performance.manage',
-                'lms.manage',
+                'lms.manage', 'hr.assets.manage',
             ]],
             'department_manager' => ['name' => 'Department Manager', 'permissions' => [
                 'hr.employees.view', 'hr.departments.view', 'hr.attendance.view',

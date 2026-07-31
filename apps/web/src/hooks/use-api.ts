@@ -39,6 +39,7 @@ export type ActivityEntry = {
 
 export type EmployeeRow = {
   id: string;
+  employee_id: number;
   employee_code: string;
   name: string;
   email: string | null;
@@ -1498,6 +1499,180 @@ export function useCompleteLesson(courseId: number | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["lms", "course", courseId] });
       queryClient.invalidateQueries({ queryKey: ["lms", "courses"] });
+    },
+  });
+}
+
+/* ── HR lifecycle: onboarding, assets, exits ───────────────────── */
+
+export type OnboardingTaskRow = {
+  id: number;
+  title: string;
+  status: "pending" | "done";
+  assignee: string | null;
+  due_date: string | null;
+  completed_at: string | null;
+};
+
+export type OnboardingSummaryRow = {
+  employee_id: number;
+  employee: string | null;
+  public_id: string | null;
+  total: number;
+  done: number;
+  progress: number;
+};
+
+export type OnboardingDetail = { employee: string; progress: number; tasks: OnboardingTaskRow[] };
+
+export type AssetRow = {
+  id: number;
+  name: string;
+  tag: string;
+  category: string;
+  serial_number: string | null;
+  status: "available" | "assigned" | "maintenance" | "retired";
+  assigned_to: string | null;
+  assigned_employee_id: number | null;
+  assigned_at: string | null;
+  notes: string | null;
+};
+
+export type AssetHistoryRow = {
+  id: number;
+  employee: string | null;
+  assigned_at: string;
+  returned_at: string | null;
+  condition_note: string | null;
+};
+
+export type ExitTaskRow = { id: number; title: string; status: "pending" | "done" };
+
+export type ExitRow = {
+  id: number;
+  employee: string | null;
+  employee_id: number;
+  reason: string;
+  notice_date: string | null;
+  last_working_day: string;
+  status: "clearance" | "completed" | "cancelled";
+  notes: string | null;
+  progress: number;
+  tasks: ExitTaskRow[];
+  created_at: string;
+};
+
+export function useOnboardingIndex() {
+  return useQuery({
+    queryKey: ["lifecycle", "onboarding"],
+    queryFn: () => get<OnboardingSummaryRow[]>("/hr/onboarding").then((r) => r.data),
+  });
+}
+
+export function useOnboardingDetail(publicId: string | null) {
+  return useQuery({
+    queryKey: ["lifecycle", "onboarding", publicId],
+    queryFn: () => get<OnboardingDetail>(`/hr/employees/${publicId}/onboarding`).then((r) => r.data),
+    enabled: publicId !== null,
+  });
+}
+
+export function useStartOnboarding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (publicId: string) =>
+      post<OnboardingDetail>(`/hr/employees/${publicId}/onboarding/start`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle"] }),
+  });
+}
+
+export function useToggleOnboardingTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: number) => patch(`/hr/onboarding-tasks/${taskId}/toggle`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle"] }),
+  });
+}
+
+export function useAssets(search: string) {
+  const params = search ? `?q=${encodeURIComponent(search)}` : "";
+  return useQuery({
+    queryKey: ["lifecycle", "assets", search],
+    queryFn: () =>
+      get<AssetRow[]>(`/hr/assets${params}`).then((r) => ({
+        assets: r.data,
+        meta: (r.meta ?? {}) as { total?: number; assigned?: number; available?: number },
+      })),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useAssetHistory(assetId: number | null) {
+  return useQuery({
+    queryKey: ["lifecycle", "asset-history", assetId],
+    queryFn: () => get<AssetHistoryRow[]>(`/hr/assets/${assetId}/history`).then((r) => r.data),
+    enabled: assetId !== null,
+  });
+}
+
+export function useCreateAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<AssetRow>("/hr/assets", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle"] }),
+  });
+}
+
+export function useAssignAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, employee_id }: { id: number; employee_id: number }) =>
+      post<AssetRow>(`/hr/assets/${id}/assign`, { employee_id }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle"] }),
+  });
+}
+
+export function useReturnAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, condition_note }: { id: number; condition_note?: string }) =>
+      post<AssetRow>(`/hr/assets/${id}/return`, { condition_note }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle"] }),
+  });
+}
+
+export function useExits() {
+  return useQuery({
+    queryKey: ["lifecycle", "exits"],
+    queryFn: () => get<ExitRow[]>("/hr/exits").then((r) => r.data),
+  });
+}
+
+export function useInitiateExit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ publicId, ...payload }: { publicId: string; reason: string; last_working_day: string; notice_date?: string; notes?: string }) =>
+      post<ExitRow>(`/hr/employees/${publicId}/exits`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle"] }),
+  });
+}
+
+export function useToggleExitTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: number) => patch<ExitRow>(`/hr/exit-tasks/${taskId}/toggle`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lifecycle", "exits"] }),
+  });
+}
+
+export function useCompleteExit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (exitId: number) => post<ExitRow>(`/hr/exits/${exitId}/complete`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lifecycle"] });
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
   });
 }

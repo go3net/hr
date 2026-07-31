@@ -21,6 +21,7 @@ use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
 use App\Modules\Hr\Http\LeaveController;
+use App\Modules\Hr\Http\LifecycleController;
 use App\Modules\Hr\Http\PayrollController;
 use App\Modules\Hr\Http\PerformanceController;
 use App\Modules\Hr\Http\RecruitmentController;
@@ -107,6 +108,26 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::patch('/payroll/runs/{payrollRun}/items/{payrollItem}', [PayrollController::class, 'adjustItem']);
             Route::get('/payslips/mine', [PayrollController::class, 'myPayslips']);
             Route::get('/payslips/{payrollItem}/download', [PayrollController::class, 'downloadPayslip']);
+
+            // Employee lifecycle: onboarding, assets, exits
+            Route::get('/onboarding', [LifecycleController::class, 'onboardingIndex']);
+            Route::get('/employees/{employee:public_id}/onboarding', [LifecycleController::class, 'onboarding']);
+            Route::post('/employees/{employee:public_id}/onboarding/start', [LifecycleController::class, 'startOnboarding']);
+            Route::post('/employees/{employee:public_id}/onboarding', [LifecycleController::class, 'addOnboardingTask']);
+            Route::patch('/onboarding-tasks/{task}/toggle', [LifecycleController::class, 'toggleOnboardingTask']);
+
+            Route::get('/assets', [LifecycleController::class, 'assets']);
+            Route::post('/assets', [LifecycleController::class, 'storeAsset']);
+            Route::patch('/assets/{asset}', [LifecycleController::class, 'updateAsset']);
+            Route::post('/assets/{asset}/assign', [LifecycleController::class, 'assignAsset']);
+            Route::post('/assets/{asset}/return', [LifecycleController::class, 'returnAsset']);
+            Route::get('/assets/{asset}/history', [LifecycleController::class, 'assetHistory']);
+
+            Route::get('/exits', [LifecycleController::class, 'exits']);
+            Route::post('/employees/{employee:public_id}/exits', [LifecycleController::class, 'initiateExit']);
+            Route::patch('/exit-tasks/{task}/toggle', [LifecycleController::class, 'toggleExitTask']);
+            Route::post('/exits/{exit}/complete', [LifecycleController::class, 'completeExit']);
+            Route::post('/exits/{exit}/cancel', [LifecycleController::class, 'cancelExit']);
 
             // Recruitment ATS
             Route::get('/recruitment/openings', [RecruitmentController::class, 'openings']);
