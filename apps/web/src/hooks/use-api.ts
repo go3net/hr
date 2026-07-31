@@ -7,7 +7,7 @@ import { ApiError, destroy, get, patch, post } from "@/lib/api";
 
 export type Bootstrap = {
   user: { id: number; name: string; email: string };
-  tenant: { name: string; subdomain: string; status: string; branding: unknown } | null;
+  tenant: { id: number; name: string; subdomain: string; status: string; branding: unknown } | null;
   modules: { key: string; name: string; enabled: boolean }[];
   subscription: {
     state: "active" | "trial" | "expired" | "complimentary";
@@ -588,7 +588,8 @@ export function useConversations() {
   return useQuery({
     queryKey: ["chat", "conversations"],
     queryFn: () => get<ConversationRow[]>("/chat/conversations").then((r) => r.data),
-    refetchInterval: 10_000,
+    // WebSocket events drive updates; this is only a reconnect fallback.
+    refetchInterval: 45_000,
   });
 }
 
@@ -597,7 +598,8 @@ export function useMessages(conversationId: number | null) {
     queryKey: ["chat", "messages", conversationId],
     queryFn: () => get<MessageRow[]>(`/chat/conversations/${conversationId}/messages`).then((r) => r.data),
     enabled: conversationId !== null,
-    refetchInterval: 4_000,
+    // WebSocket events drive updates; this is only a reconnect fallback.
+    refetchInterval: 45_000,
   });
 }
 

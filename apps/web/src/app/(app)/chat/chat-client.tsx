@@ -9,7 +9,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input, Label } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
 import {
+  type MessageRow,
   useBootstrap,
   useConversations,
   useMarkConversationRead,
@@ -19,6 +21,7 @@ import {
   useUsers,
 } from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
+import { getEcho } from "@/lib/echo";
 import { cn } from "@/lib/utils";
 
 function timeOf(iso: string): string {
@@ -134,8 +137,28 @@ export function ChatClient() {
   const sendMessage = useSendMessage(activeId);
   const markRead = useMarkConversationRead();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const active = conversations?.find((c) => c.id === activeId) ?? null;
+  const tenantId = session?.tenant?.id ?? null;
+  const myUserId = session?.user.id ?? null;
+
+  // Live messages over Reverb; the query polling stays as a fallback.
+  useEffect(() => {
+    const echo = getEcho();
+    if (!echo || tenantId === null || activeId === null) return;
+
+    const channelName = `tenant.${tenantId}.conversation.${activeId}`;
+    echo.private(channelName).listen(".message.sent", (payload: MessageRow) => {
+      if (payload.author_id === myUserId) return; // own sends are optimistic
+      queryClient.setQueryData<MessageRow[]>(["chat", "messages", activeId], (old) =>
+        old?.some((m) => m.id === payload.id) ? old : [...(old ?? []), payload],
+      );
+      queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    });
+
+    return () => echo.leave(channelName);
+  }, [tenantId, activeId, myUserId, queryClient]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

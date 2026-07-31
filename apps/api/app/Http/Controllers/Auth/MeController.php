@@ -34,7 +34,7 @@ class MeController extends ApiController
                 'name' => $user->name,
                 'email' => $user->email,
             ],
-            'tenant' => $tenant?->only(['name', 'subdomain', 'status', 'branding']),
+            'tenant' => $tenant?->only(['id', 'name', 'subdomain', 'status', 'branding']),
             'modules' => $tenant?->modules()
                 ->orderBy('sort_order')
                 ->get()

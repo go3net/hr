@@ -34,7 +34,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 7 | Inventory | 📋 | |
 | 8 | LMS | 📋 | |
 | 9 | Documents | ✅ | Folders, uploads (S3-ready), tenant/private visibility, sharing, search, downloads. Versions/OCR/approvals next |
-| 10 | Chat (Reverb) | ✅ | Direct + group chat, unread tracking, MessageSent broadcast on private channels, Reverb server configured. Web client polls; Echo/WebSocket client, reactions, voice notes next |
+| 10 | Chat (Reverb) | ✅ | Direct + group chat, unread tracking, real-time delivery: Echo/WebSocket client over Reverb with BFF-proxied channel auth (token never reaches the browser), 45s polling as reconnect fallback. Typing indicators, reactions, voice notes next |
 | 11 | Knowledge Base | ✅ | Markdown articles with draft→publish, per-tenant slugs, categories, search, view counts; published articles ground the AI assistant via search_knowledge_base. Rich-text editor + attachments next |
 | 12 | Help Desk | ✅ | Per-tenant ticket numbering (HD-0001), priorities/categories, assignment, status flow with resolved/closed stamps, threaded replies with agent-only internal notes, requester/agent notifications. SLA timers + email-in next |
 | 13 | Calendar | ✅ | Events with attendees + RSVP, company-wide events (calendar.manage), invite notifications, multi-day support, .ics export for Google/Outlook import, month-grid UI. Recurrence + two-way Google/Outlook OAuth sync next |
@@ -55,7 +55,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
-2. Inventory + LMS to complete the extended module set.
-3. Flutter mobile feature build-out against the stabilized API.
-4. HR round-out: onboarding checklists, asset assignment, exit workflows.
+1. Inventory + LMS to complete the extended module set.
+2. HR round-out: onboarding checklists, asset assignment, exit workflows.
+3. FCM push notifications (mobile + web).
+4. Flutter mobile feature build-out against the stabilized API.
