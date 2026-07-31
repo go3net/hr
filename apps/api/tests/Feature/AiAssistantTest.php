@@ -98,9 +98,10 @@ class AiAssistantTest extends TestCase
         $employee = $this->createUserWithRole($tenant, 'employee');
         $finance = $this->createUserWithRole($tenant, 'finance');
 
-        // The employee role only holds projects.view.
+        // The employee role only holds projects.view; the knowledge base
+        // tool is permission-free (published articles are readable by all).
         $tools = $this->actingAsTenantUser($employee)->getJson('/api/v1/ai/status')->json('data.tools');
-        $this->assertSame(['get_project_status'], $tools);
+        $this->assertSame(['get_project_status', 'search_knowledge_base'], $tools);
 
         $financeTools = $this->actingAsTenantUser($finance)->getJson('/api/v1/ai/status')->json('data.tools');
         $this->assertContains('get_finance_summary', $financeTools);

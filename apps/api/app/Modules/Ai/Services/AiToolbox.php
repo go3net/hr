@@ -6,6 +6,7 @@ use App\Models\AttendanceRecord;
 use App\Models\Deal;
 use App\Models\Employee;
 use App\Models\Invoice;
+use App\Models\KbArticle;
 use App\Models\LeaveRequest;
 use App\Models\Project;
 use App\Models\Task;
@@ -72,6 +73,19 @@ class AiToolbox
                 'permission' => 'finance.view',
                 'module' => 'finance',
             ],
+            [
+                'name' => 'search_knowledge_base',
+                'description' => 'Search the company knowledge base (policies, how-tos, onboarding guides) and read matching articles.',
+                'input_schema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'query' => ['type' => 'string', 'description' => 'Words to search for in article titles and bodies.'],
+                    ],
+                    'required' => ['query'],
+                ],
+                'permission' => null, // published articles are readable by all staff
+                'module' => 'knowledge',
+            ],
         ];
     }
 
@@ -85,7 +99,7 @@ class AiToolbox
         $tenant = $user->tenant;
 
         return collect($this->catalog())
-            ->filter(fn (array $tool) => $user->hasPermission($tool['permission'])
+            ->filter(fn (array $tool) => ($tool['permission'] === null || $user->hasPermission($tool['permission']))
                 && $tenant->hasModuleEnabled($tool['module']))
             ->map(fn (array $tool) => [
                 'name' => $tool['name'],
@@ -111,6 +125,7 @@ class AiToolbox
             'get_project_status' => $this->projectStatus(),
             'get_deal_pipeline' => $this->dealPipeline(),
             'get_finance_summary' => $this->financeSummary(),
+            'search_knowledge_base' => $this->searchKnowledgeBase($input),
             default => "Unknown tool {$name}.",
         };
     }
@@ -271,6 +286,31 @@ class AiToolbox
             'net' => $income - $expenses,
             'pending_expense_approvals' => Transaction::query()->where('status', 'pending')->count(),
             'outstanding_invoices' => $outstanding->all(),
+        ];
+    }
+
+    private function searchKnowledgeBase(array $input): array
+    {
+        $term = trim((string) ($input['query'] ?? ''));
+
+        $articles = KbArticle::query()
+            ->published()
+            ->when($term !== '', function ($q) use ($term) {
+                $q->where(fn ($w) => $w
+                    ->where('title', 'like', "%{$term}%")
+                    ->orWhere('body', 'like', "%{$term}%"));
+            })
+            ->orderByDesc('published_at')
+            ->limit(5)
+            ->get();
+
+        return [
+            'count' => $articles->count(),
+            'articles' => $articles->map(fn (KbArticle $a) => [
+                'title' => $a->title,
+                'category' => $a->category,
+                'body' => str($a->body)->limit(2000)->toString(),
+            ])->all(),
         ];
     }
 }

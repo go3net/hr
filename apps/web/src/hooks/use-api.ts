@@ -966,3 +966,148 @@ export function useVerifyPayment() {
     },
   });
 }
+
+/* ── Help Desk ─────────────────────────────────────────────────── */
+
+export type TicketRow = {
+  id: number;
+  number: string;
+  subject: string;
+  description: string;
+  status: "open" | "in_progress" | "waiting" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  category: string | null;
+  requester: string | null;
+  requester_id: number;
+  assignee: string | null;
+  assignee_id: number | null;
+  comments_count: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TicketCommentRow = {
+  id: number;
+  author: string | null;
+  author_id: number;
+  body: string;
+  is_internal: boolean;
+  at: string;
+};
+
+export type TicketDetail = TicketRow & { comments: TicketCommentRow[] };
+
+export function useTickets(status?: string) {
+  const params = status ? `?filter.status=${status}` : "";
+  return useQuery({
+    queryKey: ["helpdesk", "tickets", status ?? "all"],
+    queryFn: () =>
+      get<TicketRow[]>(`/helpdesk/tickets${params}`).then((r) => ({
+        tickets: r.data,
+        isAgent: Boolean((r.meta as { is_agent?: boolean } | undefined)?.is_agent),
+      })),
+  });
+}
+
+export function useTicket(id: number | null) {
+  return useQuery({
+    queryKey: ["helpdesk", "ticket", id],
+    queryFn: () => get<TicketDetail>(`/helpdesk/tickets/${id}`).then((r) => r.data),
+    enabled: id !== null,
+  });
+}
+
+export function useCreateTicket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { subject: string; description: string; priority?: string; category?: string }) =>
+      post<TicketRow>("/helpdesk/tickets", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["helpdesk"] }),
+  });
+}
+
+export function useUpdateTicket() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; status?: string; priority?: string; assignee_id?: number | null }) =>
+      patch<TicketRow>(`/helpdesk/tickets/${id}`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["helpdesk"] }),
+  });
+}
+
+export function useAddTicketComment(ticketId: number | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { body: string; is_internal?: boolean }) =>
+      post<TicketCommentRow>(`/helpdesk/tickets/${ticketId}/comments`, payload).then((r) => r.data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["helpdesk", "ticket", ticketId] }),
+  });
+}
+
+/* ── Knowledge Base ────────────────────────────────────────────── */
+
+export type ArticleRow = {
+  id: number;
+  title: string;
+  slug: string;
+  category: string | null;
+  status: "draft" | "published";
+  author: string | null;
+  excerpt: string;
+  views: number;
+  published_at: string | null;
+  updated_at: string;
+};
+
+export type ArticleDetail = ArticleRow & { body: string };
+
+export function useArticles(search: string) {
+  const params = search ? `?q=${encodeURIComponent(search)}` : "";
+  return useQuery({
+    queryKey: ["knowledge", "articles", search],
+    queryFn: () =>
+      get<ArticleRow[]>(`/knowledge/articles${params}`).then((r) => ({
+        articles: r.data,
+        isEditor: Boolean((r.meta as { is_editor?: boolean } | undefined)?.is_editor),
+      })),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useArticle(slug: string | null) {
+  return useQuery({
+    queryKey: ["knowledge", "article", slug],
+    queryFn: () => get<ArticleDetail>(`/knowledge/articles/${slug}`).then((r) => r.data),
+    enabled: slug !== null,
+  });
+}
+
+export function useSaveArticle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id?: number; title: string; body: string; category?: string | null }) =>
+      (id
+        ? patch<ArticleDetail>(`/knowledge/articles/${id}`, payload)
+        : post<ArticleRow>("/knowledge/articles", payload)
+      ).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["knowledge"] }),
+  });
+}
+
+export function useSetArticlePublished() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, publish }: { id: number; publish: boolean }) =>
+      post<ArticleRow>(`/knowledge/articles/${id}/${publish ? "publish" : "unpublish"}`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["knowledge"] }),
+  });
+}
+
+export function useDeleteArticle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/knowledge/articles/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["knowledge"] }),
+  });
+}

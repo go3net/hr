@@ -15,11 +15,13 @@ use App\Modules\Crm\Http\CrmController;
 use App\Modules\Documents\Http\DocumentController;
 use App\Modules\Finance\Http\FinanceController;
 use App\Modules\Documents\Http\FolderController;
+use App\Modules\Helpdesk\Http\HelpdeskController;
 use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
 use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\PayrollController;
+use App\Modules\Knowledge\Http\KnowledgeController;
 use App\Modules\Projects\Http\ProjectController;
 use App\Modules\Tasks\Http\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -158,6 +160,26 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']);
             Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send']);
             Route::post('/conversations/{conversation}/read', [ChatController::class, 'markRead']);
+        });
+
+        // Help Desk module
+        Route::prefix('helpdesk')->middleware('module:helpdesk')->group(function () {
+            Route::get('/tickets', [HelpdeskController::class, 'index']);
+            Route::post('/tickets', [HelpdeskController::class, 'store']);
+            Route::get('/tickets/{ticket}', [HelpdeskController::class, 'show']);
+            Route::patch('/tickets/{ticket}', [HelpdeskController::class, 'update']);
+            Route::post('/tickets/{ticket}/comments', [HelpdeskController::class, 'addComment']);
+        });
+
+        // Knowledge Base module
+        Route::prefix('knowledge')->middleware('module:knowledge')->group(function () {
+            Route::get('/articles', [KnowledgeController::class, 'index']);
+            Route::post('/articles', [KnowledgeController::class, 'store']);
+            Route::get('/articles/{slug}', [KnowledgeController::class, 'show']);
+            Route::patch('/articles/{article}', [KnowledgeController::class, 'update']);
+            Route::post('/articles/{article}/publish', [KnowledgeController::class, 'publish']);
+            Route::post('/articles/{article}/unpublish', [KnowledgeController::class, 'unpublish']);
+            Route::delete('/articles/{article}', [KnowledgeController::class, 'destroy']);
         });
 
         // AI Assistant module

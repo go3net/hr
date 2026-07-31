@@ -34,8 +34,8 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 8 | LMS | 📋 | |
 | 9 | Documents | ✅ | Folders, uploads (S3-ready), tenant/private visibility, sharing, search, downloads. Versions/OCR/approvals next |
 | 10 | Chat (Reverb) | ✅ | Direct + group chat, unread tracking, MessageSent broadcast on private channels, Reverb server configured. Web client polls; Echo/WebSocket client, reactions, voice notes next |
-| 11 | Knowledge Base | 📋 | |
-| 12 | Help Desk | 📋 | |
+| 11 | Knowledge Base | ✅ | Markdown articles with draft→publish, per-tenant slugs, categories, search, view counts; published articles ground the AI assistant via search_knowledge_base. Rich-text editor + attachments next |
+| 12 | Help Desk | ✅ | Per-tenant ticket numbering (HD-0001), priorities/categories, assignment, status flow with resolved/closed stamps, threaded replies with agent-only internal notes, requester/agent notifications. SLA timers + email-in next |
 | 13 | Calendar | 📋 | |
 | 14 | AI Assistant | ✅ | Claude-powered chat grounded via permission-aware tenant tools (employees, leave, attendance, projects, pipeline, finance), document drafting (offer letters, contracts, policies, memos), per-tenant usage metering. Set ANTHROPIC_API_KEY to enable. Conversation persistence + knowledge-base grounding next |
 
@@ -54,8 +54,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Help Desk + Knowledge Base (ticket workflows, article search — also feeds AI grounding).
-3. Calendar module with Google/Outlook sync.
-4. Recruitment ATS + performance (KPI/OKR) to round out HR.
-5. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
-6. Flutter mobile feature build-out against the stabilized API.
+1. Calendar module with Google/Outlook sync.
+2. Recruitment ATS + performance (KPI/OKR) to round out HR.
+3. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
+4. Flutter mobile feature build-out against the stabilized API.
