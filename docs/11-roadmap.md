@@ -36,7 +36,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 10 | Chat (Reverb) | ✅ | Direct + group chat, unread tracking, MessageSent broadcast on private channels, Reverb server configured. Web client polls; Echo/WebSocket client, reactions, voice notes next |
 | 11 | Knowledge Base | ✅ | Markdown articles with draft→publish, per-tenant slugs, categories, search, view counts; published articles ground the AI assistant via search_knowledge_base. Rich-text editor + attachments next |
 | 12 | Help Desk | ✅ | Per-tenant ticket numbering (HD-0001), priorities/categories, assignment, status flow with resolved/closed stamps, threaded replies with agent-only internal notes, requester/agent notifications. SLA timers + email-in next |
-| 13 | Calendar | 📋 | |
+| 13 | Calendar | ✅ | Events with attendees + RSVP, company-wide events (calendar.manage), invite notifications, multi-day support, .ics export for Google/Outlook import, month-grid UI. Recurrence + two-way Google/Outlook OAuth sync next |
 | 14 | AI Assistant | ✅ | Claude-powered chat grounded via permission-aware tenant tools (employees, leave, attendance, projects, pipeline, finance), document drafting (offer letters, contracts, policies, memos), per-tenant usage metering. Set ANTHROPIC_API_KEY to enable. Conversation persistence + knowledge-base grounding next |
 
 ## Frontend
@@ -54,7 +54,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Calendar module with Google/Outlook sync.
-2. Recruitment ATS + performance (KPI/OKR) to round out HR.
-3. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
+1. Recruitment ATS + performance (KPI/OKR) to round out HR.
+2. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
+3. Inventory + LMS to complete the extended module set.
 4. Flutter mobile feature build-out against the stabilized API.

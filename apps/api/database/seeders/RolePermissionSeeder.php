@@ -34,6 +34,7 @@ class RolePermissionSeeder extends Seeder
             'finance.manage' => 'Manage transactions and invoices',
             'helpdesk.manage' => 'Manage help desk tickets',
             'knowledge.manage' => 'Author knowledge base articles',
+            'calendar.manage' => 'Create company-wide calendar events',
         ];
 
         foreach ($permissions as $key => $label) {
@@ -50,7 +51,7 @@ class RolePermissionSeeder extends Seeder
                 'hr.departments.view', 'hr.departments.manage',
                 'hr.attendance.view', 'hr.leave.view', 'hr.leave.approve',
                 'hr.payroll.view', 'hr.payroll.manage', 'documents.manage',
-                'helpdesk.manage', 'knowledge.manage',
+                'helpdesk.manage', 'knowledge.manage', 'calendar.manage',
             ]],
             'department_manager' => ['name' => 'Department Manager', 'permissions' => [
                 'hr.employees.view', 'hr.departments.view', 'hr.attendance.view',

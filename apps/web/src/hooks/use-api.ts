@@ -1111,3 +1111,55 @@ export function useDeleteArticle() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["knowledge"] }),
   });
 }
+
+/* ── Calendar ──────────────────────────────────────────────────── */
+
+export type CalendarEventRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  location: string | null;
+  starts_at: string;
+  ends_at: string;
+  all_day: boolean;
+  kind: "meeting" | "reminder" | "deadline" | "company";
+  organizer: string | null;
+  is_organizer: boolean;
+  my_response: "pending" | "accepted" | "declined" | null;
+  attendees: { id: number; name: string; response: string }[];
+};
+
+export function useCalendarEvents(from: string, to: string) {
+  return useQuery({
+    queryKey: ["calendar", from, to],
+    queryFn: () =>
+      get<CalendarEventRow[]>(`/calendar/events?from=${from}&to=${to}`).then((r) => r.data),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useCreateEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<CalendarEventRow>("/calendar/events", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+  });
+}
+
+export function useDeleteEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/calendar/events/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+  });
+}
+
+export function useRsvpEvent() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, response }: { id: number; response: "accepted" | "declined" }) =>
+      post<CalendarEventRow>(`/calendar/events/${id}/respond`, { response }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["calendar"] }),
+  });
+}

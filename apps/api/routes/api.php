@@ -9,6 +9,7 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Modules\Ai\Http\AiController;
 use App\Modules\Billing\Http\BillingController;
+use App\Modules\Calendar\Http\CalendarController;
 use App\Modules\Dashboard\Http\DashboardController;
 use App\Modules\Chat\Http\ChatController;
 use App\Modules\Crm\Http\CrmController;
@@ -160,6 +161,16 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']);
             Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send']);
             Route::post('/conversations/{conversation}/read', [ChatController::class, 'markRead']);
+        });
+
+        // Calendar module
+        Route::prefix('calendar')->middleware('module:calendar')->group(function () {
+            Route::get('/events', [CalendarController::class, 'index']);
+            Route::post('/events', [CalendarController::class, 'store']);
+            Route::patch('/events/{event}', [CalendarController::class, 'update']);
+            Route::delete('/events/{event}', [CalendarController::class, 'destroy']);
+            Route::post('/events/{event}/respond', [CalendarController::class, 'rsvp']);
+            Route::get('/export', [CalendarController::class, 'export']);
         });
 
         // Help Desk module

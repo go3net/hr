@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { CalendarClient } from "./calendar-client";
 
-export default function Page() {
-  return <ComingSoon module="Calendar" blurb="Company events, meetings, leave and birthdays with Google and Outlook sync." />;
+export const metadata: Metadata = { title: "Calendar" };
+
+export default function CalendarPage() {
+  return <CalendarClient />;
 }
