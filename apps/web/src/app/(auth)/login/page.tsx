@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -23,24 +24,9 @@ export default function LoginPage() {
             Sign in to your workspace to continue.
           </p>
 
-          <form className="mt-8 space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Work email</Label>
-              <Input id="email" type="email" placeholder="you@company.com" autoComplete="email" />
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-[13px] text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
-              <Input id="password" type="password" placeholder="••••••••" autoComplete="current-password" />
-            </div>
-            <Button className="w-full" size="lg" type="submit">
-              Sign in
-            </Button>
-          </form>
+          <Suspense>
+            <LoginForm />
+          </Suspense>
 
           <div className="my-6 flex items-center gap-3 text-[12px] text-muted-foreground">
             <span className="h-px flex-1 bg-border" />

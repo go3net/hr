@@ -1,9 +1,12 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import { Bell, Search, Sun, Moon, Monitor } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Bell, Search, Sun, Moon, Monitor, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { useBootstrap } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 
 const themes = [
@@ -12,10 +15,22 @@ const themes = [
   { key: "system", icon: Monitor, label: "System" },
 ] as const;
 
+const subscribeNoop = () => () => {};
+const getTrue = () => true;
+const getFalse = () => false;
+
 export function Topbar() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const router = useRouter();
+  const { data: session } = useBootstrap();
+  // Theme is only known client-side — render the switcher after hydration.
+  const mounted = useSyncExternalStore(subscribeNoop, getTrue, getFalse);
+
+  const signOut = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    router.replace("/login");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-xl lg:px-6">
@@ -58,9 +73,36 @@ export function Topbar() {
           <span className="absolute right-2 top-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
         </button>
 
-        <button className="ml-1 flex items-center gap-2 rounded-[10px] p-1 transition-colors hover:bg-muted">
-          <Avatar name="Adaeze Okafor" size={30} />
-        </button>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              className="ml-1 flex items-center gap-2 rounded-[10px] p-1 transition-colors hover:bg-muted"
+              aria-label="Account menu"
+            >
+              <Avatar name={session?.user.name ?? "…"} size={30} />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              sideOffset={8}
+              className="z-50 min-w-[220px] rounded-[12px] border border-border bg-surface-elevated p-1.5 shadow-pop"
+            >
+              <div className="px-2.5 py-2">
+                <p className="text-sm font-medium">{session?.user.name}</p>
+                <p className="text-[12px] text-muted-foreground">{session?.user.email}</p>
+              </div>
+              <DropdownMenu.Separator className="my-1 h-px bg-border" />
+              <DropdownMenu.Item
+                onSelect={signOut}
+                className="flex cursor-pointer items-center gap-2 rounded-[8px] px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-muted"
+              >
+                <LogOut className="size-4 text-muted-foreground" strokeWidth={1.75} />
+                Sign out
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
     </header>
   );

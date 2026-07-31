@@ -1,12 +1,9 @@
 /**
- * Thin fetch wrapper for the Go3net Office API.
- *
- * All server state flows through TanStack Query hooks that call these
- * helpers. The base URL points at the Laravel API; the `X-Tenant` header
- * carries the tenant subdomain for non-subdomain environments (local dev).
+ * Client-side fetch wrapper. All requests go through the Next.js BFF layer
+ * (/api/backend/*), which attaches the HttpOnly session token and forwards
+ * to the Laravel API — the browser never holds the token and no CORS is
+ * involved.
  */
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
   constructor(
@@ -19,14 +16,15 @@ export class ApiError extends Error {
   }
 }
 
+export type Envelope<T> = { data: T; meta?: { pagination?: { next_cursor: string | null; per_page: number } } };
+
 type RequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
-export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function api<T>(path: string, options: RequestOptions = {}): Promise<Envelope<T>> {
   const { body, headers, ...rest } = options;
 
-  const res = await fetch(`${API_URL}/api/v1${path}`, {
+  const res = await fetch(`/api/backend${path}`, {
     ...rest,
-    credentials: "include",
     headers: {
       Accept: "application/json",
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -35,21 +33,27 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
 
-  if (res.status === 204) return undefined as T;
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.location.href = "/login";
+  }
+
+  if (res.status === 204) return { data: undefined as T };
 
   const json = await res.json().catch(() => null);
 
   if (!res.ok) {
     const err = json?.error;
+    const fields = json?.errors as Record<string, string[]> | undefined;
+    const firstFieldError = fields ? Object.values(fields)[0]?.[0] : undefined;
     throw new ApiError(
       res.status,
       err?.code ?? "UNKNOWN",
-      err?.message ?? `Request failed (${res.status})`,
-      err?.fields,
+      err?.message ?? json?.message ?? firstFieldError ?? `Request failed (${res.status})`,
+      err?.fields ?? fields,
     );
   }
 
-  return json as T;
+  return json as Envelope<T>;
 }
 
 export const get = <T>(path: string) => api<T>(path);
