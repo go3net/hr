@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Builds
+.next/
+apps/web/out/
+apps/mobile/build/
+apps/mobile/.dart_tool/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Laravel
+apps/api/storage/*.key
+apps/api/storage/logs/*
+apps/api/storage/framework/cache/data/*
+apps/api/storage/framework/sessions/*
+apps/api/storage/framework/views/*
+apps/api/database/database.sqlite
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
