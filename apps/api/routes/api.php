@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Modules\Dashboard\Http\DashboardController;
+use App\Modules\Chat\Http\ChatController;
 use App\Modules\Documents\Http\DocumentController;
 use App\Modules\Documents\Http\FolderController;
 use App\Modules\Hr\Http\AttendanceController;
@@ -108,6 +109,15 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::post('/folders', [FolderController::class, 'store']);
             Route::patch('/folders/{folder}', [FolderController::class, 'update']);
             Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
+        });
+
+        // Chat module
+        Route::prefix('chat')->middleware('module:chat')->group(function () {
+            Route::get('/conversations', [ChatController::class, 'conversations']);
+            Route::post('/conversations', [ChatController::class, 'store']);
+            Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']);
+            Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send']);
+            Route::post('/conversations/{conversation}/read', [ChatController::class, 'markRead']);
         });
 
         // Tasks module

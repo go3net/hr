@@ -556,3 +556,83 @@ export function useShareDocument() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
   });
 }
+
+/* ── Chat ──────────────────────────────────────────────────────── */
+
+export type ConversationRow = {
+  id: number;
+  type: "direct" | "group";
+  name: string;
+  participants: { id: number; name: string }[];
+  last_message: { author: string | null; body: string; at: string } | null;
+  unread: number;
+};
+
+export type MessageRow = {
+  id: number;
+  conversation_id: number;
+  author: string | null;
+  author_id: number;
+  body: string;
+  at: string;
+};
+
+export function useConversations() {
+  return useQuery({
+    queryKey: ["chat", "conversations"],
+    queryFn: () => get<ConversationRow[]>("/chat/conversations").then((r) => r.data),
+    refetchInterval: 10_000,
+  });
+}
+
+export function useMessages(conversationId: number | null) {
+  return useQuery({
+    queryKey: ["chat", "messages", conversationId],
+    queryFn: () => get<MessageRow[]>(`/chat/conversations/${conversationId}/messages`).then((r) => r.data),
+    enabled: conversationId !== null,
+    refetchInterval: 4_000,
+  });
+}
+
+export function useStartConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { type: "direct" | "group"; user_ids: number[]; name?: string }) =>
+      post<{ id: number; existing: boolean }>("/chat/conversations", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["chat"] }),
+  });
+}
+
+export function useSendMessage(conversationId: number | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) =>
+      post<MessageRow>(`/chat/conversations/${conversationId}/messages`, { body }),
+    onMutate: async (body) => {
+      // Optimistic append so sending feels instant.
+      const key = ["chat", "messages", conversationId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MessageRow[]>(key);
+      queryClient.setQueryData<MessageRow[]>(key, (old) => [
+        ...(old ?? []),
+        { id: -Date.now(), conversation_id: conversationId ?? 0, author: "You", author_id: -1, body, at: new Date().toISOString() },
+      ]);
+      return { previous, key };
+    },
+    onError: (_e, _v, context) => {
+      if (context?.previous) queryClient.setQueryData(context.key, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
+      queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    },
+  });
+}
+
+export function useMarkConversationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => post(`/chat/conversations/${id}/read`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+  });
+}

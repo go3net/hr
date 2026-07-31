@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { ChatClient } from "./chat-client";
 
-export default function Page() {
-  return <ComingSoon module="Chat" blurb="Real-time one-on-one and group messaging with mentions and reactions." />;
+export const metadata: Metadata = { title: "Chat" };
+
+export default function ChatPage() {
+  return <ChatClient />;
 }
