@@ -31,8 +31,8 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 4 | Tasks | ✅ | Personal + project tasks, priorities, comments, my-tasks view. Recurring rules next |
 | 5 | CRM | ✅ | Leads → convert, clients, drag-and-drop deal pipeline with stage stats, activities/follow-ups. Proposals, WhatsApp/email send next |
 | 6 | Finance | ✅ | Income/expenses with approval, invoices (line items, tax, numbering) with payments and auto-posted income, month summary. POs, budgets, cash-flow charts next |
-| 7 | Inventory | 📋 | |
-| 8 | LMS | 📋 | |
+| 7 | Inventory | ✅ | Items with SKUs, categories, unit costs and locations; in/out/adjust stock movements with quantity guards and audit trail; low-stock flags + stock-value summary (inventory.view/manage). Purchase orders + supplier tracking next |
+| 8 | LMS | ✅ | Draft→publish courses with ordered markdown lessons, self-enrollment, per-lesson completion with course progress and auto-completion (lms.manage authors). Quizzes + certificates next |
 | 9 | Documents | ✅ | Folders, uploads (S3-ready), tenant/private visibility, sharing, search, downloads. Versions/OCR/approvals next |
 | 10 | Chat (Reverb) | ✅ | Direct + group chat, unread tracking, real-time delivery: Echo/WebSocket client over Reverb with BFF-proxied channel auth (token never reaches the browser), 45s polling as reconnect fallback. Typing indicators, reactions, voice notes next |
 | 11 | Knowledge Base | ✅ | Markdown articles with draft→publish, per-tenant slugs, categories, search, view counts; published articles ground the AI assistant via search_knowledge_base. Rich-text editor + attachments next |
@@ -55,7 +55,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Inventory + LMS to complete the extended module set.
-2. HR round-out: onboarding checklists, asset assignment, exit workflows.
-3. FCM push notifications (mobile + web).
-4. Flutter mobile feature build-out against the stabilized API.
+1. HR round-out: onboarding checklists, asset assignment, exit workflows.
+2. FCM push notifications (mobile + web).
+3. Flutter mobile feature build-out against the stabilized API.
+4. White-label branding + custom roles CRUD.

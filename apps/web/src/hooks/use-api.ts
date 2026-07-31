@@ -1342,3 +1342,162 @@ export function useCheckInKeyResult() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance"] }),
   });
 }
+
+/* ── Inventory ─────────────────────────────────────────────────── */
+
+export type InventoryItemRow = {
+  id: number;
+  name: string;
+  sku: string;
+  category: string | null;
+  unit: string;
+  quantity: number;
+  reorder_level: number;
+  unit_cost: number | null;
+  location: string | null;
+  low_stock: boolean;
+  updated_at: string;
+};
+
+export type StockMovementRow = {
+  id: number;
+  kind: "in" | "out" | "adjust";
+  quantity: number;
+  note: string | null;
+  by: string | null;
+  at: string;
+};
+
+export type InventoryMeta = { total_items: number; low_stock: number; stock_value: number };
+
+export function useInventory(search: string) {
+  const params = search ? `?q=${encodeURIComponent(search)}` : "";
+  return useQuery({
+    queryKey: ["inventory", search],
+    queryFn: () =>
+      get<InventoryItemRow[]>(`/inventory/items${params}`).then((r) => ({
+        items: r.data,
+        meta: (r.meta ?? { total_items: 0, low_stock: 0, stock_value: 0 }) as InventoryMeta,
+      })),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useItemMovements(itemId: number | null) {
+  return useQuery({
+    queryKey: ["inventory", "movements", itemId],
+    queryFn: () => get<StockMovementRow[]>(`/inventory/items/${itemId}/movements`).then((r) => r.data),
+    enabled: itemId !== null,
+  });
+}
+
+export function useCreateItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<InventoryItemRow>("/inventory/items", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inventory"] }),
+  });
+}
+
+export function useMoveStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; kind: string; quantity: number; note?: string }) =>
+      post<InventoryItemRow>(`/inventory/items/${id}/movements`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["inventory"] }),
+  });
+}
+
+/* ── LMS ───────────────────────────────────────────────────────── */
+
+export type CourseRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  category: string | null;
+  status: "draft" | "published";
+  lessons_count: number;
+  enrollments_count: number | null;
+  enrolled: boolean;
+  progress: number;
+  completed: boolean;
+  published_at: string | null;
+};
+
+export type LessonRow = {
+  id: number;
+  title: string;
+  content: string;
+  position: number;
+  duration_minutes: number | null;
+  completed: boolean;
+};
+
+export type CourseDetail = CourseRow & { lessons: LessonRow[] };
+
+export function useCourses() {
+  return useQuery({
+    queryKey: ["lms", "courses"],
+    queryFn: () =>
+      get<CourseRow[]>("/lms/courses").then((r) => ({
+        courses: r.data,
+        isManager: Boolean((r.meta as { is_manager?: boolean } | undefined)?.is_manager),
+      })),
+  });
+}
+
+export function useCourse(id: number | null) {
+  return useQuery({
+    queryKey: ["lms", "course", id],
+    queryFn: () => get<CourseDetail>(`/lms/courses/${id}`).then((r) => r.data),
+    enabled: id !== null,
+  });
+}
+
+export function useCreateCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<CourseRow>("/lms/courses", payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lms"] }),
+  });
+}
+
+export function useUpdateCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; status?: string; title?: string }) =>
+      patch<CourseRow>(`/lms/courses/${id}`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lms"] }),
+  });
+}
+
+export function useAddLesson(courseId: number | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { title: string; content: string; duration_minutes?: number }) =>
+      post(`/lms/courses/${courseId}/lessons`, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lms"] }),
+  });
+}
+
+export function useEnroll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (courseId: number) => post<CourseRow>(`/lms/courses/${courseId}/enroll`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["lms"] }),
+  });
+}
+
+export function useCompleteLesson(courseId: number | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (lessonId: number) =>
+      post<{ progress: number; course_completed: boolean }>(`/lms/lessons/${lessonId}/complete`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lms", "course", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["lms", "courses"] });
+    },
+  });
+}

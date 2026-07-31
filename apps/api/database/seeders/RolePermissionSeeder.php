@@ -36,6 +36,9 @@ class RolePermissionSeeder extends Seeder
             'knowledge.manage' => 'Author knowledge base articles',
             'calendar.manage' => 'Create company-wide calendar events',
             'hr.recruitment.manage' => 'Manage job openings and applicants',
+            'inventory.view' => 'View inventory',
+            'inventory.manage' => 'Manage inventory items and stock',
+            'lms.manage' => 'Author and publish courses',
             'hr.performance.view' => 'View all performance objectives',
             'hr.performance.manage' => 'Manage objectives for any employee',
         ];
@@ -56,6 +59,7 @@ class RolePermissionSeeder extends Seeder
                 'hr.payroll.view', 'hr.payroll.manage', 'documents.manage',
                 'helpdesk.manage', 'knowledge.manage', 'calendar.manage',
                 'hr.recruitment.manage', 'hr.performance.view', 'hr.performance.manage',
+                'lms.manage',
             ]],
             'department_manager' => ['name' => 'Department Manager', 'permissions' => [
                 'hr.employees.view', 'hr.departments.view', 'hr.attendance.view',
@@ -64,7 +68,7 @@ class RolePermissionSeeder extends Seeder
             ]],
             'finance' => ['name' => 'Finance', 'permissions' => [
                 'hr.employees.view', 'hr.payroll.view', 'hr.payroll.manage', 'crm.view',
-                'finance.view', 'finance.manage',
+                'finance.view', 'finance.manage', 'inventory.view', 'inventory.manage',
             ]],
             'project_manager' => ['name' => 'Project Manager', 'permissions' => ['hr.employees.view', 'projects.view', 'projects.manage', 'crm.view', 'crm.manage']],
             'team_lead' => ['name' => 'Team Lead', 'permissions' => ['hr.employees.view', 'hr.leave.approve', 'projects.view', 'projects.manage', 'crm.view', 'crm.manage']],

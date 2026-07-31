@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { InventoryClient } from "./inventory-client";
 
-export default function Page() {
-  return <ComingSoon module="Inventory" blurb="Products, suppliers, warehouses, stock levels and low-stock alerts." />;
+export const metadata: Metadata = { title: "Inventory" };
+
+export default function InventoryPage() {
+  return <InventoryClient />;
 }

@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { LmsClient } from "./lms-client";
 
-export default function Page() {
-  return <ComingSoon module="Training" blurb="Courses, quizzes, progress tracking and completion certificates." />;
+export const metadata: Metadata = { title: "Training" };
+
+export default function LmsPage() {
+  return <LmsClient />;
 }

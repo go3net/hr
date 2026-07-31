@@ -24,7 +24,9 @@ use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\PayrollController;
 use App\Modules\Hr\Http\PerformanceController;
 use App\Modules\Hr\Http\RecruitmentController;
+use App\Modules\Inventory\Http\InventoryController;
 use App\Modules\Knowledge\Http\KnowledgeController;
+use App\Modules\Lms\Http\LmsController;
 use App\Modules\Projects\Http\ProjectController;
 use App\Modules\Tasks\Http\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -209,6 +211,26 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::post('/articles/{article}/publish', [KnowledgeController::class, 'publish']);
             Route::post('/articles/{article}/unpublish', [KnowledgeController::class, 'unpublish']);
             Route::delete('/articles/{article}', [KnowledgeController::class, 'destroy']);
+        });
+
+        // Inventory module
+        Route::prefix('inventory')->middleware('module:inventory')->group(function () {
+            Route::get('/items', [InventoryController::class, 'index']);
+            Route::post('/items', [InventoryController::class, 'store']);
+            Route::patch('/items/{item}', [InventoryController::class, 'update']);
+            Route::post('/items/{item}/movements', [InventoryController::class, 'move']);
+            Route::get('/items/{item}/movements', [InventoryController::class, 'movements']);
+        });
+
+        // LMS module
+        Route::prefix('lms')->middleware('module:lms')->group(function () {
+            Route::get('/courses', [LmsController::class, 'courses']);
+            Route::post('/courses', [LmsController::class, 'storeCourse']);
+            Route::get('/courses/{course}', [LmsController::class, 'show']);
+            Route::patch('/courses/{course}', [LmsController::class, 'updateCourse']);
+            Route::post('/courses/{course}/lessons', [LmsController::class, 'storeLesson']);
+            Route::post('/courses/{course}/enroll', [LmsController::class, 'enroll']);
+            Route::post('/lessons/{lesson}/complete', [LmsController::class, 'completeLesson']);
         });
 
         // AI Assistant module
