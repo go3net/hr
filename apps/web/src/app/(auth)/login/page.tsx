@@ -36,8 +36,8 @@ export default function LoginPage() {
 
           <div className="grid grid-cols-3 gap-2">
             {["Google", "Microsoft", "GitHub"].map((provider) => (
-              <Button key={provider} variant="outline" type="button" className="text-[13px]">
-                {provider}
+              <Button key={provider} asChild variant="outline" className="text-[13px]">
+                <a href={`/api/auth/oauth/${provider.toLowerCase()}`}>{provider}</a>
               </Button>
             ))}
           </div>

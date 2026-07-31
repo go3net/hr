@@ -8,11 +8,11 @@ Status of this repository against the full product scope. ✅ implemented here �
 | Monorepo (api / web / mobile / infra / docs) | ✅ | |
 | Multi-tenant core (TenantScope, resolver, context) | ✅ | Shared-DB row scoping; RLS documented |
 | Auth: register tenant, login, Sanctum tokens | ✅ | |
-| 2FA (TOTP), OAuth Google/Microsoft/GitHub | 📋 | Contracts + schema ready; wire providers next |
+| 2FA (TOTP), OAuth Google/Microsoft/GitHub | ✅ | Enroll/confirm/challenge with single-use recovery codes; OAuth sign-in via one-time exchange codes (set provider credentials in .env) |
 | RBAC (system roles, permissions, policies) | ✅ | Custom roles CRUD next |
 | Module registry + per-tenant toggles + middleware | ✅ | |
 | Audit logging | ✅ | Trait + writer on state changes |
-| Notifications (in-app) | 🏗️ | Email/push/SMS adapters next |
+| Notifications (in-app + email) | ✅ | Bell center + queued mail; FCM push/SMS/WhatsApp adapters next |
 | Billing & subscriptions | 📋 | Schema + plan gating designed |
 | White-label branding | 📋 | |
 

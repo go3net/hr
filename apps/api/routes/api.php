@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\MeController;
+use App\Http\Controllers\Auth\OAuthController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Modules\Dashboard\Http\DashboardController;
@@ -19,12 +21,19 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
     // Public
     Route::post('/auth/register', RegisterController::class)->middleware('throttle:10,1');
     Route::post('/auth/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/auth/two-factor', [TwoFactorController::class, 'challenge'])->middleware('throttle:10,1');
+    Route::get('/auth/oauth/{provider}/redirect', [OAuthController::class, 'redirect'])->middleware('throttle:20,1');
+    Route::get('/auth/oauth/{provider}/callback', [OAuthController::class, 'callback'])->middleware('throttle:20,1');
+    Route::post('/auth/oauth/exchange', [OAuthController::class, 'exchange'])->middleware('throttle:10,1');
 
     // Authenticated
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/auth/logout', [LoginController::class, 'logout']);
         Route::get('/me', [MeController::class, 'show']);
         Route::get('/me/bootstrap', [MeController::class, 'bootstrap']);
+        Route::post('/me/two-factor/enable', [TwoFactorController::class, 'enable']);
+        Route::post('/me/two-factor/confirm', [TwoFactorController::class, 'confirm']);
+        Route::post('/me/two-factor/disable', [TwoFactorController::class, 'disable']);
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::patch('/modules/{key}', [ModuleController::class, 'update']);

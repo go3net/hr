@@ -4,19 +4,12 @@ import { API_URL, SESSION_COOKIE } from "@/lib/server/backend";
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
 
-  if (!body?.email || !body?.password) {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_FAILED", message: "Email and password are required." } },
-      { status: 422 },
-    );
-  }
-
-  const upstream = await fetch(`${API_URL}/api/v1/auth/login`, {
+  const upstream = await fetch(`${API_URL}/api/v1/auth/two-factor`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
-      email: body.email,
-      password: body.password,
+      challenge_token: body?.challenge_token,
+      code: body?.code,
       device_name: "web",
     }),
     cache: "no-store",
@@ -30,17 +23,9 @@ export async function POST(request: NextRequest) {
   }
 
   const json = await upstream.json().catch(() => null);
-
   if (!upstream.ok) {
-    return NextResponse.json(json ?? { error: { code: "LOGIN_FAILED", message: "Login failed." } }, {
+    return NextResponse.json(json ?? { error: { code: "CHALLENGE_FAILED", message: "Verification failed." } }, {
       status: upstream.status,
-    });
-  }
-
-  // 2FA-enrolled users get a challenge instead of a session.
-  if (json.data.two_factor_required) {
-    return NextResponse.json({
-      data: { two_factor_required: true, challenge_token: json.data.challenge_token },
     });
   }
 
@@ -50,7 +35,7 @@ export async function POST(request: NextRequest) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12, // 12 hours
+    maxAge: 60 * 60 * 12,
   });
 
   return response;

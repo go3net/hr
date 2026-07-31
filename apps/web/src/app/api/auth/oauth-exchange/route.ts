@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { API_URL, SESSION_COOKIE } from "@/lib/server/backend";
 
+/** Swaps the one-time OAuth code for a session cookie (or a 2FA challenge). */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
 
-  if (!body?.email || !body?.password) {
-    return NextResponse.json(
-      { error: { code: "VALIDATION_FAILED", message: "Email and password are required." } },
-      { status: 422 },
-    );
-  }
-
-  const upstream = await fetch(`${API_URL}/api/v1/auth/login`, {
+  const upstream = await fetch(`${API_URL}/api/v1/auth/oauth/exchange`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({
-      email: body.email,
-      password: body.password,
-      device_name: "web",
-    }),
+    body: JSON.stringify({ code: body?.code }),
     cache: "no-store",
   }).catch(() => null);
 
@@ -30,14 +20,12 @@ export async function POST(request: NextRequest) {
   }
 
   const json = await upstream.json().catch(() => null);
-
   if (!upstream.ok) {
-    return NextResponse.json(json ?? { error: { code: "LOGIN_FAILED", message: "Login failed." } }, {
+    return NextResponse.json(json ?? { error: { code: "EXCHANGE_FAILED", message: "Sign-in failed." } }, {
       status: upstream.status,
     });
   }
 
-  // 2FA-enrolled users get a challenge instead of a session.
   if (json.data.two_factor_required) {
     return NextResponse.json({
       data: { two_factor_required: true, challenge_token: json.data.challenge_token },
@@ -50,7 +38,7 @@ export async function POST(request: NextRequest) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12, // 12 hours
+    maxAge: 60 * 60 * 12,
   });
 
   return response;

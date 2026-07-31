@@ -6,8 +6,10 @@ use App\Core\Http\ApiController;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends ApiController
@@ -45,6 +47,18 @@ class LoginController extends ApiController
         }
 
         RateLimiter::clear($throttleKey);
+
+        // 2FA-enrolled users get a short-lived challenge instead of a token.
+        if ($user->hasTwoFactorEnabled()) {
+            $challenge = Str::random(48);
+            Cache::put("2fa-challenge:{$challenge}", $user->id, now()->addMinutes(5));
+
+            return $this->respond([
+                'two_factor_required' => true,
+                'challenge_token' => $challenge,
+            ]);
+        }
+
         $user->forceFill(['last_login_at' => now()])->save();
 
         return $this->respond([
