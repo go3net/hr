@@ -18,6 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => ResolveTenant::class,
             'module' => EnsureModuleEnabled::class,
         ]);
+
+        // Tenant context MUST be bound before route-model binding runs,
+        // otherwise bound models resolve without the tenant scope and a
+        // cross-tenant id could leak. Route-level middleware executes
+        // after SubstituteBindings, so ResolveTenant is ordered ahead of
+        // it explicitly.
+        $middleware->priority([
+            \Illuminate\Auth\Middleware\Authenticate::class,
+            ResolveTenant::class,
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

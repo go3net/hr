@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, post } from "@/lib/api";
+import { get, patch, post } from "@/lib/api";
 
 /* ── Types mirroring the API contracts ─────────────────────────── */
 
@@ -233,6 +233,9 @@ export type PayrollItemRow = {
   employee_code: string | null;
   basic: number;
   allowances: Record<string, number> | null;
+  bonuses: Record<string, number> | null;
+  deductions: Record<string, number> | null;
+  has_payslip: boolean;
   gross: number;
   pension_employee: number;
   paye_tax: number;
@@ -294,5 +297,23 @@ export function useMyPayslips() {
   return useQuery({
     queryKey: ["payroll", "payslips"],
     queryFn: () => get<PayslipRow[]>("/hr/payslips/mine").then((r) => r.data),
+  });
+}
+
+export function useAdjustPayrollItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      runId,
+      itemId,
+      bonuses,
+      deductions,
+    }: {
+      runId: number;
+      itemId: number;
+      bonuses: Record<string, number>;
+      deductions: Record<string, number>;
+    }) => patch<PayrollItemRow>(`/hr/payroll/runs/${runId}/items/${itemId}`, { bonuses, deductions }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payroll"] }),
   });
 }

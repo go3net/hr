@@ -60,7 +60,9 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::post('/payroll/runs/{payrollRun}/approve', [PayrollController::class, 'approve']);
             Route::post('/payroll/runs/{payrollRun}/publish', [PayrollController::class, 'publish']);
             Route::get('/payroll/runs/{payrollRun}/bank-export', [PayrollController::class, 'bankExport']);
+            Route::patch('/payroll/runs/{payrollRun}/items/{payrollItem}', [PayrollController::class, 'adjustItem']);
             Route::get('/payslips/mine', [PayrollController::class, 'myPayslips']);
+            Route::get('/payslips/{payrollItem}/download', [PayrollController::class, 'downloadPayslip']);
         });
     });
 });

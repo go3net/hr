@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\PayrollItem;
 use App\Models\PayrollRun;
 use App\Models\User;
+use App\Modules\Hr\Jobs\GeneratePayslipPdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -82,7 +83,58 @@ class PayrollService
         $run->update(['status' => 'published', 'published_at' => now()]);
         AuditLog::record('payroll.published', $run);
 
+        // Payslip PDFs render on the reports queue, one job per employee.
+        foreach ($run->items()->pluck('id') as $itemId) {
+            GeneratePayslipPdf::dispatch($itemId);
+        }
+
         return $run->refresh();
+    }
+
+    /**
+     * Adjust a draft run item with one-off bonuses and deductions, then
+     * recompute its taxes and the run totals. Bonuses are taxable but not
+     * pensionable; deductions (loans, advances) come off after tax.
+     *
+     * @param array<string, float> $bonuses
+     * @param array<string, float> $deductions
+     */
+    public function adjustItem(PayrollRun $run, PayrollItem $item, array $bonuses, array $deductions): PayrollItem
+    {
+        $this->assertStatus($run, 'draft');
+
+        if ($item->payroll_run_id !== $run->id) {
+            throw ValidationException::withMessages(['item' => 'This item does not belong to the run.']);
+        }
+
+        $year = (int) substr($run->period, 0, 4);
+
+        $basic = (float) $item->basic;
+        $allowances = collect($item->allowances ?? [])->map(fn ($v) => (float) $v);
+        $bonusTotal = collect($bonuses)->sum();
+        $deductionTotal = collect($deductions)->sum();
+
+        $grossMonthly = $basic + $allowances->sum() + $bonusTotal;
+        $pensionMonthly = $this->pensionEmployee($basic, $allowances->all());
+        $payeMonthly = $this->payeMonthly($grossMonthly, $pensionMonthly, $year);
+        $net = $grossMonthly - $pensionMonthly - $payeMonthly - $deductionTotal;
+
+        $item->update([
+            'bonuses' => $bonuses ?: null,
+            'deductions' => $deductions ?: null,
+            'gross' => round($grossMonthly, 2),
+            'paye_tax' => round($payeMonthly, 2),
+            'net' => round($net, 2),
+        ]);
+
+        $run->update([
+            'gross_total' => (float) $run->items()->sum('gross'),
+            'net_total' => (float) $run->items()->sum('net'),
+        ]);
+
+        AuditLog::record('payroll.item_adjusted', $item);
+
+        return $item->refresh();
     }
 
     /** Monthly figures for one employee, persisted as a run item. */

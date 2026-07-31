@@ -8,6 +8,8 @@ use App\Models\PayrollRun;
 use App\Modules\Hr\Services\PayrollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class PayrollController extends ApiController
 {
@@ -90,6 +92,47 @@ class PayrollController extends ApiController
         );
     }
 
+    /** One-off bonuses/deductions on a draft run item, with recompute. */
+    public function adjustItem(Request $request, PayrollRun $payrollRun, PayrollItem $payrollItem): JsonResponse
+    {
+        $this->requirePermission('hr.payroll.manage');
+
+        $data = $request->validate([
+            'bonuses' => ['array'],
+            'bonuses.*' => ['numeric', 'min:0'],
+            'deductions' => ['array'],
+            'deductions.*' => ['numeric', 'min:0'],
+        ]);
+
+        $item = $this->payroll->adjustItem(
+            $payrollRun,
+            $payrollItem,
+            array_map(floatval(...), $data['bonuses'] ?? []),
+            array_map(floatval(...), $data['deductions'] ?? []),
+        );
+
+        return $this->respond($this->presentItem($item->load('employee')));
+    }
+
+    /** Download a payslip PDF — own payslip, or any with payroll view rights. */
+    public function downloadPayslip(Request $request, PayrollItem $payrollItem): Response
+    {
+        $isOwn = $request->user()->employee?->id === $payrollItem->employee_id;
+        if (! $isOwn) {
+            $this->requirePermission('hr.payroll.view');
+        }
+
+        if ($payrollItem->run->status !== 'published' || ! $payrollItem->payslip_path) {
+            return $this->respondError('PAYSLIP_NOT_READY', 'This payslip has not been generated yet.', 404);
+        }
+
+        return Storage::download(
+            $payrollItem->payslip_path,
+            "payslip-{$payrollItem->run->period}.pdf",
+            ['Content-Type' => 'application/pdf'],
+        );
+    }
+
     /** The signed-in employee's own published payslips. */
     public function myPayslips(Request $request): JsonResponse
     {
@@ -134,6 +177,9 @@ class PayrollController extends ApiController
             'employee_code' => $item->relationLoaded('employee') ? $item->employee?->employee_code : null,
             'basic' => (float) $item->basic,
             'allowances' => $item->allowances,
+            'bonuses' => $item->bonuses,
+            'deductions' => $item->deductions,
+            'has_payslip' => (bool) $item->payslip_path,
             'gross' => (float) $item->gross,
             'pension_employee' => (float) $item->pension_employee,
             'paye_tax' => (float) $item->paye_tax,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, Download, Banknote, CheckCircle2, Send } from "lucide-react";
+import { Plus, Loader2, Download, Banknote, CheckCircle2, Send, SlidersHorizontal, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,12 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input, Label } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
+  useAdjustPayrollItem,
   useBankExport,
   useCreatePayrollRun,
   useMyPayslips,
   usePayrollAction,
   usePayrollRun,
   usePayrollRuns,
+  type PayrollItemRow,
 } from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
@@ -83,6 +85,68 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+
+function AdjustItemDialog({ runId, item }: { runId: number; item: PayrollItemRow }) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [bonus, setBonus] = useState(String(Object.values(item.bonuses ?? {})[0] ?? ""));
+  const [deduction, setDeduction] = useState(String(Object.values(item.deductions ?? {})[0] ?? ""));
+  const adjust = useAdjustPayrollItem();
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    adjust.mutate(
+      {
+        runId,
+        itemId: item.id,
+        bonuses: Number(bonus) > 0 ? { bonus: Number(bonus) } : {},
+        deductions: Number(deduction) > 0 ? { deduction: Number(deduction) } : {},
+      },
+      {
+        onSuccess: () => setOpen(false),
+        onError: (err) => setError(err instanceof ApiError ? err.message : "Could not adjust item."),
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" aria-label={`Adjust ${item.employee}`}>
+          <SlidersHorizontal />
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        title={`Adjust · ${item.employee}`}
+        description="Bonuses are taxed; deductions (loans, advances) come off after tax. PAYE and totals recompute on save."
+      >
+        <form className="space-y-4" onSubmit={submit}>
+          {error && (
+            <div className="rounded-[10px] border border-danger/30 bg-[var(--danger-soft)] px-3 py-2.5 text-[13px] text-danger">
+              {error}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="bonus">Bonus (₦)</Label>
+              <Input id="bonus" type="number" min="0" step="1000" value={bonus} onChange={(e) => setBonus(e.target.value)} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="deduction">Deduction (₦)</Label>
+              <Input id="deduction" type="number" min="0" step="1000" value={deduction} onChange={(e) => setDeduction(e.target.value)} placeholder="0" />
+            </div>
+          </div>
+          <Button className="w-full" type="submit" disabled={adjust.isPending}>
+            {adjust.isPending && <Loader2 className="animate-spin" />}
+            Save adjustments
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function PayrollClient() {
@@ -227,6 +291,7 @@ export function PayrollClient() {
                   <th className="px-4 py-3">Pension (8%)</th>
                   <th className="px-4 py-3">PAYE</th>
                   <th className="px-4 py-3">Net</th>
+                  <th className="px-4 py-3 text-right"><span className="sr-only">Adjust</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -250,6 +315,9 @@ export function PayrollClient() {
                     </td>
                     <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{formatCurrency(item.paye_tax)}</td>
                     <td className="px-4 py-2.5 font-medium tabular-nums">{formatCurrency(item.net)}</td>
+                    <td className="px-4 py-2.5 text-right">
+                      {detail?.status === "draft" && <AdjustItemDialog runId={detail.id} item={item} />}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -278,6 +346,13 @@ export function PayrollClient() {
                 </p>
               </div>
               <p className="font-semibold tabular-nums">{formatCurrency(slip.net)}</p>
+              {slip.has_payslip && (
+                <Button asChild size="sm" variant="outline">
+                  <a href={`/api/backend/hr/payslips/${slip.id}/download`} download>
+                    <FileText /> PDF
+                  </a>
+                </Button>
+              )}
             </div>
           ))}
           {payslips?.length === 0 && (

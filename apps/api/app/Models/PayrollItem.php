@@ -11,7 +11,7 @@ class PayrollItem extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'tenant_id', 'payroll_run_id', 'employee_id', 'basic', 'allowances', 'deductions',
+        'tenant_id', 'payroll_run_id', 'employee_id', 'basic', 'allowances', 'bonuses', 'deductions',
         'gross', 'pension_employee', 'pension_employer', 'paye_tax', 'net', 'payslip_path',
     ];
 
@@ -20,6 +20,7 @@ class PayrollItem extends Model
         return [
             'basic' => 'decimal:2',
             'allowances' => 'array',
+            'bonuses' => 'array',
             'deductions' => 'array',
             'gross' => 'decimal:2',
             'pension_employee' => 'decimal:2',

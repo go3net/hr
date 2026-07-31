@@ -37,6 +37,16 @@ async function proxy(request: NextRequest, path: string[]): Promise<NextResponse
     return new NextResponse(null, { status: 204 });
   }
 
+  const contentType = upstream.headers.get("content-type") ?? "";
+
+  // Binary responses (payslip PDFs, exports) stream through untouched.
+  if (!contentType.includes("json")) {
+    const headers = new Headers({ "Content-Type": contentType || "application/octet-stream" });
+    const disposition = upstream.headers.get("content-disposition");
+    if (disposition) headers.set("Content-Disposition", disposition);
+    return new NextResponse(upstream.body, { status: upstream.status, headers });
+  }
+
   const json = await upstream.json().catch(() => null);
   return NextResponse.json(json, { status: upstream.status });
 }

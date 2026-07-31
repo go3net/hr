@@ -62,6 +62,33 @@ class TenancyIsolationTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_route_model_binding_is_tenant_scoped_without_preset_context(): void
+    {
+        // Regression: in production the tenant context is bound by
+        // middleware, not before the request like actingAsTenantUser does.
+        // Binding must still be scoped, so authenticate purely via token.
+        $this->seedCatalog();
+
+        $acme = $this->createTenant('acme');
+        $globex = $this->createTenant('globex', 'Globex Corp');
+
+        $foreign = Employee::create([
+            'tenant_id' => $globex->id,
+            'employee_code' => 'GLX-1',
+            'first_name' => 'Greg',
+            'last_name' => 'Globex',
+        ]);
+
+        $acmeAdmin = $this->createUserWithRole($acme, 'super_admin');
+        $token = $acmeAdmin->createToken('test')->plainTextToken;
+
+        app(\App\Core\Tenancy\TenantContext::class)->forget();
+
+        $this->withToken($token)
+            ->getJson("/api/v1/hr/employees/{$foreign->public_id}")
+            ->assertNotFound();
+    }
+
     public function test_employee_role_cannot_manage_employees(): void
     {
         $this->seedCatalog();
