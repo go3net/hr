@@ -317,3 +317,119 @@ export function useAdjustPayrollItem() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payroll"] }),
   });
 }
+
+/* ── Projects & tasks ──────────────────────────────────────────── */
+
+export type ProjectRow = {
+  id: number;
+  name: string;
+  status: "active" | "on_hold" | "completed" | "archived";
+  color: string;
+  starts_on: string | null;
+  due_on: string | null;
+  budget: number | null;
+  tasks_count: number;
+  done_tasks_count: number;
+  members: { id: number; name: string }[];
+};
+
+export type TaskRow = {
+  id: number;
+  title: string;
+  description: string | null;
+  status: "todo" | "in_progress" | "review" | "done";
+  priority: "low" | "medium" | "high" | "urgent";
+  due_date: string | null;
+  position: number;
+  project: { id: number; name: string; color: string } | null;
+  assignees: { id: number; name: string }[];
+  comments_count: number;
+  completed_at: string | null;
+};
+
+export type TaskCommentRow = { id: number; author: string | null; body: string; at: string };
+
+export function useProjects() {
+  return useQuery({
+    queryKey: ["projects"],
+    queryFn: () => get<ProjectRow[]>("/projects").then((r) => r.data),
+  });
+}
+
+export function useProject(id: number) {
+  return useQuery({
+    queryKey: ["projects", id],
+    queryFn: () => get<ProjectRow & { description: string | null }>(`/projects/${id}`).then((r) => r.data),
+  });
+}
+
+export function useCreateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { name: string; description?: string; due_on?: string }) =>
+      post<ProjectRow>("/projects", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  });
+}
+
+export function useTasks(params: { projectId?: number; mine?: boolean }) {
+  const search = new URLSearchParams();
+  if (params.projectId) search.set("filter.project_id", String(params.projectId));
+  if (params.mine) search.set("mine", "1");
+  const qs = search.toString() ? `?${search.toString()}` : "";
+
+  return useQuery({
+    queryKey: ["tasks", params],
+    queryFn: () => get<TaskRow[]>(`/tasks${qs}`).then((r) => r.data),
+  });
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => post<TaskRow>("/tasks", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+}
+
+/** Kanban move / edit with optimistic column update. */
+export function useUpdateTask(listKey: { projectId?: number; mine?: boolean }) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number } & Record<string, unknown>) =>
+      patch<TaskRow>(`/tasks/${id}`, payload),
+    onMutate: async ({ id, ...payload }) => {
+      const key = ["tasks", listKey];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<TaskRow[]>(key);
+      queryClient.setQueryData<TaskRow[]>(key, (old) =>
+        old?.map((t) => (t.id === id ? ({ ...t, ...payload } as TaskRow) : t)),
+      );
+      return { previous, key };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(context.key, context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+}
+
+export function useTaskComments(taskId: number | null) {
+  return useQuery({
+    queryKey: ["tasks", "comments", taskId],
+    queryFn: () => get<TaskCommentRow[]>(`/tasks/${taskId}/comments`).then((r) => r.data),
+    enabled: taskId !== null,
+  });
+}
+
+export function useAddTaskComment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, body }: { taskId: number; body: string }) =>
+      post<TaskCommentRow>(`/tasks/${taskId}/comments`, { body }),
+    onSuccess: (_res, { taskId }) => {
+      queryClient.invalidateQueries({ queryKey: ["tasks", "comments", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}

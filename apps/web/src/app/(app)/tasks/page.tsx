@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { TasksClient } from "./tasks-client";
 
-export default function Page() {
-  return <ComingSoon module="Tasks" blurb="Personal and department tasks with priorities, deadlines and recurring rules." />;
+export const metadata: Metadata = { title: "My tasks" };
+
+export default function TasksPage() {
+  return <TasksClient />;
 }

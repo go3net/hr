@@ -10,6 +10,8 @@ use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
 use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\PayrollController;
+use App\Modules\Projects\Http\ProjectController;
+use App\Modules\Tasks\Http\TaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('tenant')->group(function () {
@@ -63,6 +65,21 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::patch('/payroll/runs/{payrollRun}/items/{payrollItem}', [PayrollController::class, 'adjustItem']);
             Route::get('/payslips/mine', [PayrollController::class, 'myPayslips']);
             Route::get('/payslips/{payrollItem}/download', [PayrollController::class, 'downloadPayslip']);
+        });
+
+        // Projects module
+        Route::middleware('module:projects')->group(function () {
+            Route::apiResource('projects', ProjectController::class);
+        });
+
+        // Tasks module
+        Route::prefix('tasks')->middleware('module:tasks')->group(function () {
+            Route::get('/', [TaskController::class, 'index']);
+            Route::post('/', [TaskController::class, 'store']);
+            Route::patch('/{task}', [TaskController::class, 'update']);
+            Route::delete('/{task}', [TaskController::class, 'destroy']);
+            Route::get('/{task}/comments', [TaskController::class, 'comments']);
+            Route::post('/{task}/comments', [TaskController::class, 'addComment']);
         });
     });
 });

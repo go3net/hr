@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { ProjectsClient } from "./projects-client";
 
-export default function Page() {
-  return <ComingSoon module="Projects" blurb="Kanban boards, timelines, sprints, milestones and budgets for every team." />;
+export const metadata: Metadata = { title: "Projects" };
+
+export default function ProjectsPage() {
+  return <ProjectsClient />;
 }

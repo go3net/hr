@@ -26,8 +26,8 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslips, bank export CSV. Payslip PDFs next |
 | 2 | HR: onboarding docs, assets, exit | 📋 | |
 | 2 | HR: recruitment ATS, performance (KPI/OKR) | 📋 | |
-| 3 | Projects (kanban, milestones) | 🏗️ | Schema designed; API scaffold pattern established |
-| 4 | Tasks | 🏗️ | |
+| 3 | Projects (kanban, milestones) | ✅ | Projects, members, milestones schema, drag-and-drop board. Sprints/Gantt/dependencies next |
+| 4 | Tasks | ✅ | Personal + project tasks, priorities, comments, my-tasks view. Recurring rules next |
 | 5 | CRM | 📋 | |
 | 6 | Finance | 📋 | |
 | 7 | Inventory | 📋 | |

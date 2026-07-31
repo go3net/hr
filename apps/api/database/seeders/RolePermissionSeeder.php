@@ -24,6 +24,8 @@ class RolePermissionSeeder extends Seeder
             'hr.payroll.manage' => 'Run payroll',
             'settings.modules.manage' => 'Enable or disable modules',
             'settings.roles.manage' => 'Manage roles and permissions',
+            'projects.view' => 'View projects',
+            'projects.manage' => 'Create and manage projects',
         ];
 
         foreach ($permissions as $key => $label) {
@@ -48,11 +50,11 @@ class RolePermissionSeeder extends Seeder
             'finance' => ['name' => 'Finance', 'permissions' => [
                 'hr.employees.view', 'hr.payroll.view', 'hr.payroll.manage',
             ]],
-            'project_manager' => ['name' => 'Project Manager', 'permissions' => ['hr.employees.view']],
-            'team_lead' => ['name' => 'Team Lead', 'permissions' => ['hr.employees.view', 'hr.leave.approve']],
-            'employee' => ['name' => 'Employee', 'permissions' => []],
-            'nysc' => ['name' => 'NYSC Corps Member', 'permissions' => []],
-            'intern' => ['name' => 'Intern', 'permissions' => []],
+            'project_manager' => ['name' => 'Project Manager', 'permissions' => ['hr.employees.view', 'projects.view', 'projects.manage']],
+            'team_lead' => ['name' => 'Team Lead', 'permissions' => ['hr.employees.view', 'hr.leave.approve', 'projects.view', 'projects.manage']],
+            'employee' => ['name' => 'Employee', 'permissions' => ['projects.view']],
+            'nysc' => ['name' => 'NYSC Corps Member', 'permissions' => ['projects.view']],
+            'intern' => ['name' => 'Intern', 'permissions' => ['projects.view']],
             'guest' => ['name' => 'Guest', 'permissions' => []],
         ];
 
