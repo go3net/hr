@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { AssistantClient } from "./assistant-client";
 
-export default function Page() {
-  return <ComingSoon module="AI assistant" blurb="Ask questions, generate documents and get insights grounded in your data." />;
+export const metadata: Metadata = { title: "AI assistant" };
+
+export default function AssistantPage() {
+  return <AssistantClient />;
 }

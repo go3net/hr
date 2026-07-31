@@ -23,7 +23,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 2 | HR: employees, departments, positions, offices | ✅ | Digital personnel file fields incl. encrypted NIN/BVN/bank |
 | 2 | HR: attendance (GPS geofence, QR, late detection) | ✅ | Biometric/face = integration points |
 | 2 | HR: leave (types, balances, approval workflow) | ✅ | |
-| 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslips, bank export CSV. Payslip PDFs next |
+| 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslip PDFs, adjustments, bank export CSV |
 | 2 | HR: onboarding docs, assets, exit | 📋 | |
 | 2 | HR: recruitment ATS, performance (KPI/OKR) | 📋 | |
 | 3 | Projects (kanban, milestones) | ✅ | Projects, members, milestones schema, drag-and-drop board. Sprints/Gantt/dependencies next |
@@ -37,7 +37,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 11 | Knowledge Base | 📋 | |
 | 12 | Help Desk | 📋 | |
 | 13 | Calendar | 📋 | |
-| 14 | AI Assistant | 📋 | Gateway design + flows documented |
+| 14 | AI Assistant | ✅ | Claude-powered chat grounded via permission-aware tenant tools (employees, leave, attendance, projects, pipeline, finance), document drafting (offer letters, contracts, policies, memos), per-tenant usage metering. Set ANTHROPIC_API_KEY to enable. Conversation persistence + knowledge-base grounding next |
 
 ## Frontend
 | Capability | Status |
@@ -54,9 +54,9 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Payslip PDF generation (queued) + payroll adjustments (bonuses, loans, one-off deductions).
-2. OAuth + 2FA wiring; notifications (email templates + FCM).
-3. Projects/Tasks module APIs + kanban UI (pattern already set by HR).
-4. Chat via Reverb; Documents on S3.
-5. Billing (Paystack first) to enable monetization.
-6. AI assistant v1 (grounded Q&A + document generation).
+1. Billing & subscriptions (Paystack first) to enable monetization.
+2. Help Desk + Knowledge Base (ticket workflows, article search — also feeds AI grounding).
+3. Calendar module with Google/Outlook sync.
+4. Recruitment ATS + performance (KPI/OKR) to round out HR.
+5. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.
+6. Flutter mobile feature build-out against the stabilized API.

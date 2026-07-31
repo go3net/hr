@@ -854,3 +854,46 @@ export function useRecordPayment() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance"] }),
   });
 }
+
+/* ── AI Assistant ──────────────────────────────────────────────── */
+
+export type AiStatus = {
+  configured: boolean;
+  model: string;
+  tools: string[];
+};
+
+export type AiChatMessage = { role: "user" | "assistant"; content: string };
+
+export type AiChatResponse = {
+  reply: string;
+  tool_calls: string[];
+  usage: { input_tokens: number; output_tokens: number };
+};
+
+export type AiGenerateResponse = {
+  content: string;
+  usage: { input_tokens: number; output_tokens: number };
+};
+
+export function useAiStatus() {
+  return useQuery({
+    queryKey: ["ai", "status"],
+    queryFn: () => get<AiStatus>("/ai/status").then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useAiChat() {
+  return useMutation({
+    mutationFn: (messages: AiChatMessage[]) =>
+      post<AiChatResponse>("/ai/chat", { messages }).then((r) => r.data),
+  });
+}
+
+export function useAiGenerate() {
+  return useMutation({
+    mutationFn: (payload: { type: string; instructions: string }) =>
+      post<AiGenerateResponse>("/ai/generate", payload).then((r) => r.data),
+  });
+}

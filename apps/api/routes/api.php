@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
+use App\Modules\Ai\Http\AiController;
 use App\Modules\Dashboard\Http\DashboardController;
 use App\Modules\Chat\Http\ChatController;
 use App\Modules\Crm\Http\CrmController;
@@ -151,6 +152,13 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/conversations/{conversation}/messages', [ChatController::class, 'messages']);
             Route::post('/conversations/{conversation}/messages', [ChatController::class, 'send']);
             Route::post('/conversations/{conversation}/read', [ChatController::class, 'markRead']);
+        });
+
+        // AI Assistant module
+        Route::prefix('ai')->middleware('module:ai')->group(function () {
+            Route::get('/status', [AiController::class, 'status']);
+            Route::post('/chat', [AiController::class, 'chat'])->middleware('throttle:30,1');
+            Route::post('/generate', [AiController::class, 'generate'])->middleware('throttle:15,1');
         });
 
         // Tasks module
