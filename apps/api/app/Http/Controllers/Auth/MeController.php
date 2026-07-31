@@ -43,6 +43,13 @@ class MeController extends ApiController
                     'name' => $m->name,
                     'enabled' => (bool) $m->pivot->enabled,
                 ]),
+            'subscription' => $tenant ? [
+                'state' => $tenant->subscriptionState(),
+                'plan_key' => $tenant->plan_key,
+                'plan_name' => config("billing.plans.{$tenant->plan_key}.name"),
+                'trial_ends_at' => $tenant->trial_ends_at?->toIso8601String(),
+                'subscription_ends_at' => $tenant->subscription_ends_at?->toIso8601String(),
+            ] : null,
             'permissions' => $user->hasRole('super_admin') ? ['*'] : $user->permissionKeys(),
             'unread_notifications' => $user->unreadNotifications()->count(),
         ]);

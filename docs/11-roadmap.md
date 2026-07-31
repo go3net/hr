@@ -13,7 +13,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | Module registry + per-tenant toggles + middleware | ✅ | |
 | Audit logging | ✅ | Trait + writer on state changes |
 | Notifications (in-app + email) | ✅ | Bell center + queued mail; FCM push/SMS/WhatsApp adapters next |
-| Billing & subscriptions | 📋 | Schema + plan gating designed |
+| Billing & subscriptions | ✅ | Paystack checkout + signed webhooks, 3-plan catalog, 14-day trial, renewal-preserving period extension, 402 lock on expiry (billing/auth stay reachable), payment history UI. Per-plan seat limits + proration next |
 | White-label branding | 📋 | |
 
 ## Modules
@@ -54,8 +54,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Billing & subscriptions (Paystack first) to enable monetization.
-2. Help Desk + Knowledge Base (ticket workflows, article search — also feeds AI grounding).
+1. Help Desk + Knowledge Base (ticket workflows, article search — also feeds AI grounding).
 3. Calendar module with Google/Outlook sync.
 4. Recruitment ATS + performance (KPI/OKR) to round out HR.
 5. Echo WebSocket client for chat (server already broadcasts via Reverb); FCM push.

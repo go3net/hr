@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Modules\Ai\Http\AiController;
+use App\Modules\Billing\Http\BillingController;
 use App\Modules\Dashboard\Http\DashboardController;
 use App\Modules\Chat\Http\ChatController;
 use App\Modules\Crm\Http\CrmController;
@@ -31,6 +32,7 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
     Route::get('/auth/oauth/{provider}/redirect', [OAuthController::class, 'redirect'])->middleware('throttle:20,1');
     Route::get('/auth/oauth/{provider}/callback', [OAuthController::class, 'callback'])->middleware('throttle:20,1');
     Route::post('/auth/oauth/exchange', [OAuthController::class, 'exchange'])->middleware('throttle:10,1');
+    Route::post('/billing/webhook/paystack', [BillingController::class, 'webhook'])->middleware('throttle:60,1');
 
     // Authenticated
     Route::middleware(['auth:sanctum'])->group(function () {
@@ -40,6 +42,10 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         Route::post('/me/two-factor/enable', [TwoFactorController::class, 'enable']);
         Route::post('/me/two-factor/confirm', [TwoFactorController::class, 'confirm']);
         Route::post('/me/two-factor/disable', [TwoFactorController::class, 'disable']);
+
+        Route::get('/billing', [BillingController::class, 'show']);
+        Route::post('/billing/checkout', [BillingController::class, 'checkout']);
+        Route::post('/billing/verify', [BillingController::class, 'verify'])->middleware('throttle:20,1');
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::patch('/modules/{key}', [ModuleController::class, 'update']);

@@ -9,6 +9,13 @@ export type Bootstrap = {
   user: { id: number; name: string; email: string };
   tenant: { name: string; subdomain: string; status: string; branding: unknown } | null;
   modules: { key: string; name: string; enabled: boolean }[];
+  subscription: {
+    state: "active" | "trial" | "expired" | "complimentary";
+    plan_key: string | null;
+    plan_name: string | null;
+    trial_ends_at: string | null;
+    subscription_ends_at: string | null;
+  } | null;
   permissions: string[];
 };
 
@@ -895,5 +902,67 @@ export function useAiGenerate() {
   return useMutation({
     mutationFn: (payload: { type: string; instructions: string }) =>
       post<AiGenerateResponse>("/ai/generate", payload).then((r) => r.data),
+  });
+}
+
+/* ── Billing ───────────────────────────────────────────────────── */
+
+export type PlanRow = {
+  key: string;
+  name: string;
+  price: number;
+  max_employees: number | null;
+  blurb: string;
+  features: string[];
+};
+
+export type BillingPaymentRow = {
+  id: number;
+  plan_key: string;
+  amount: number;
+  reference: string;
+  status: "pending" | "paid" | "failed";
+  channel: string | null;
+  paid_at: string | null;
+  by: string | null;
+  created_at: string;
+};
+
+export type BillingInfo = {
+  state: "active" | "trial" | "expired" | "complimentary";
+  plan_key: string | null;
+  plan_name: string | null;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
+  configured: boolean;
+  plans: PlanRow[];
+  payments: BillingPaymentRow[];
+};
+
+export function useBilling() {
+  return useQuery({
+    queryKey: ["billing"],
+    queryFn: () => get<BillingInfo>("/billing").then((r) => r.data),
+  });
+}
+
+export function useStartCheckout() {
+  return useMutation({
+    mutationFn: (plan: string) =>
+      post<{ authorization_url: string; reference: string }>("/billing/checkout", { plan }).then(
+        (r) => r.data,
+      ),
+  });
+}
+
+export function useVerifyPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reference: string) =>
+      post<{ activated: boolean }>("/billing/verify", { reference }).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["billing"] });
+      queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
+    },
   });
 }

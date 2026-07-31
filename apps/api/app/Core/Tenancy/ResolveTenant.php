@@ -42,6 +42,19 @@ class ResolveTenant
                 ], 403);
             }
 
+            // An expired trial or lapsed subscription locks the workspace,
+            // but auth, profile and billing stay reachable so an admin can
+            // sign in and pay.
+            if ($tenant->subscriptionState() === 'expired'
+                && ! $request->is('api/v1/auth/*', 'api/v1/me', 'api/v1/me/*', 'api/v1/billing', 'api/v1/billing/*')) {
+                return response()->json([
+                    'error' => [
+                        'code' => 'SUBSCRIPTION_EXPIRED',
+                        'message' => 'Your trial or subscription has ended. Choose a plan to keep using Go3net Office.',
+                    ],
+                ], 402);
+            }
+
             app(TenantContext::class)->set($tenant);
         }
 
