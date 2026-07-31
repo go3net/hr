@@ -44,6 +44,7 @@ class MeController extends ApiController
                     'enabled' => (bool) $m->pivot->enabled,
                 ]),
             'permissions' => $user->hasRole('super_admin') ? ['*'] : $user->permissionKeys(),
+            'unread_notifications' => $user->unreadNotifications()->count(),
         ]);
     }
 }

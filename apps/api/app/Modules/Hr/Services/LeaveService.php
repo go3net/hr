@@ -2,6 +2,8 @@
 
 namespace App\Modules\Hr\Services;
 
+use App\Core\Notifications\LeaveDecided;
+use App\Core\Notifications\LeaveSubmitted;
 use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\LeaveApproval;
@@ -64,7 +66,26 @@ class LeaveService
 
         AuditLog::record('leave.submitted', $request);
 
+        if ($request->status === 'pending') {
+            $range = "{$start->toFormattedDateString()} – {$end->toFormattedDateString()}";
+            $this->approversFor($employee)->each(
+                fn (User $approver) => $approver->notify(
+                    new LeaveSubmitted($employee->full_name, $type->name, $range),
+                ),
+            );
+        }
+
         return $request;
+    }
+
+    /** Users in this tenant whose roles carry hr.leave.approve (not the requester). */
+    private function approversFor(Employee $employee): \Illuminate\Support\Collection
+    {
+        return User::query()
+            ->where('tenant_id', $employee->tenant_id)
+            ->where('id', '!=', $employee->user_id)
+            ->whereHas('roles.permissions', fn ($q) => $q->where('key', 'hr.leave.approve'))
+            ->get();
     }
 
     public function approve(LeaveRequest $request, User $approver, ?string $note = null): LeaveRequest
@@ -84,6 +105,7 @@ class LeaveService
             $this->consumeBalance($request);
 
             AuditLog::record('leave.approved', $request);
+            $request->employee->user?->notify(new LeaveDecided($request->leaveType->name, 'approved', $note));
 
             return $request->refresh();
         });
@@ -103,6 +125,7 @@ class LeaveService
 
         $request->update(['status' => 'rejected']);
         AuditLog::record('leave.rejected', $request);
+        $request->employee->user?->notify(new LeaveDecided($request->leaveType->name, 'rejected', $note));
 
         return $request->refresh();
     }

@@ -433,3 +433,32 @@ export function useAddTaskComment() {
     },
   });
 }
+
+/* ── Notifications ─────────────────────────────────────────────── */
+
+export type NotificationRow = {
+  id: string;
+  title: string;
+  body: string;
+  url: string;
+  kind: "task" | "leave" | "payroll" | "system";
+  read: boolean;
+  at: string;
+};
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: () =>
+      get<{ unread_count: number; notifications: NotificationRow[] }>("/notifications").then((r) => r.data),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => post("/notifications/read-all"),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}

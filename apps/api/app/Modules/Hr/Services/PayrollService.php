@@ -84,8 +84,9 @@ class PayrollService
         AuditLog::record('payroll.published', $run);
 
         // Payslip PDFs render on the reports queue, one job per employee.
-        foreach ($run->items()->pluck('id') as $itemId) {
-            GeneratePayslipPdf::dispatch($itemId);
+        foreach ($run->items()->with('employee.user')->get() as $item) {
+            GeneratePayslipPdf::dispatch($item->id);
+            $item->employee?->user?->notify(new \App\Core\Notifications\PayslipPublished($run->period));
         }
 
         return $run->refresh();

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationController;
 use App\Modules\Dashboard\Http\DashboardController;
 use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
@@ -27,6 +28,10 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::patch('/modules/{key}', [ModuleController::class, 'update']);
+
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
         // Dashboard module
         Route::prefix('dashboard')->middleware('module:dashboard')->group(function () {

@@ -4,8 +4,9 @@ import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Bell, Search, Sun, Moon, Monitor, LogOut } from "lucide-react";
+import { Search, Sun, Moon, Monitor, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { useBootstrap } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 
@@ -65,13 +66,7 @@ export function Topbar() {
           </div>
         )}
 
-        <button
-          aria-label="Notifications"
-          className="relative flex size-9 items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <Bell className="size-[18px]" strokeWidth={1.75} />
-          <span className="absolute right-2 top-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
-        </button>
+        <NotificationBell />
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>

@@ -3,6 +3,8 @@
 namespace App\Modules\Tasks\Http;
 
 use App\Core\Http\ApiController;
+use App\Core\Notifications\TaskAssigned;
+use App\Core\Notifications\TaskCommented;
 use App\Models\AuditLog;
 use App\Models\Task;
 use App\Models\TaskComment;
@@ -57,11 +59,15 @@ class TaskController extends ApiController
             'position' => $this->nextPosition($data['project_id'] ?? null, $status),
         ]);
 
-        $assigneeIds = User::query()
+        $assignees = User::query()
             ->where('tenant_id', $request->user()->tenant_id)
             ->whereIn('id', $data['assignee_ids'] ?? [$request->user()->id])
-            ->pluck('id');
-        $task->assignees()->sync($assigneeIds);
+            ->get();
+        $task->assignees()->sync($assignees->pluck('id'));
+
+        $url = $task->project_id ? "/projects/{$task->project_id}" : '/tasks';
+        $assignees->reject(fn (User $u) => $u->id === $request->user()->id)
+            ->each(fn (User $u) => $u->notify(new TaskAssigned($task->title, $request->user()->name, $url)));
 
         AuditLog::record('task.created', $task);
 
@@ -90,11 +96,17 @@ class TaskController extends ApiController
         $task->update(collect($data)->except('assignee_ids')->all());
 
         if (array_key_exists('assignee_ids', $data)) {
-            $assigneeIds = User::query()
+            $current = $task->assignees()->pluck('users.id');
+            $assignees = User::query()
                 ->where('tenant_id', $request->user()->tenant_id)
                 ->whereIn('id', $data['assignee_ids'])
-                ->pluck('id');
-            $task->assignees()->sync($assigneeIds);
+                ->get();
+            $task->assignees()->sync($assignees->pluck('id'));
+
+            $url = $task->project_id ? "/projects/{$task->project_id}" : '/tasks';
+            $assignees
+                ->reject(fn (User $u) => $current->contains($u->id) || $u->id === $request->user()->id)
+                ->each(fn (User $u) => $u->notify(new TaskAssigned($task->title, $request->user()->name, $url)));
         }
 
         AuditLog::record('task.updated', $task);
@@ -133,6 +145,14 @@ class TaskController extends ApiController
             'user_id' => $request->user()->id,
             'body' => $data['body'],
         ]);
+
+        // Everyone involved except the commenter hears about it.
+        $url = $task->project_id ? "/projects/{$task->project_id}" : '/tasks';
+        $task->assignees()->get()
+            ->when($task->creator, fn ($c) => $c->push($task->creator))
+            ->unique('id')
+            ->reject(fn (User $u) => $u->id === $request->user()->id)
+            ->each(fn (User $u) => $u->notify(new TaskCommented($task->title, $request->user()->name, $url)));
 
         return $this->respond([
             'id' => $comment->id,
