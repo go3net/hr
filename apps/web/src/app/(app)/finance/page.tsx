@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { FinanceClient } from "./finance-client";
 
-export default function Page() {
-  return <ComingSoon module="Finance" blurb="Income, expenses, invoices, budgets and cash-flow in one place." />;
+export const metadata: Metadata = { title: "Finance" };
+
+export default function FinancePage() {
+  return <FinanceClient />;
 }

@@ -29,6 +29,8 @@ class RolePermissionSeeder extends Seeder
             'documents.manage' => 'Manage any document or folder',
             'crm.view' => 'View CRM data',
             'crm.manage' => 'Manage leads, clients and deals',
+            'finance.view' => 'View finance data',
+            'finance.manage' => 'Manage transactions and invoices',
         ];
 
         foreach ($permissions as $key => $label) {
@@ -52,6 +54,7 @@ class RolePermissionSeeder extends Seeder
             ]],
             'finance' => ['name' => 'Finance', 'permissions' => [
                 'hr.employees.view', 'hr.payroll.view', 'hr.payroll.manage', 'crm.view',
+                'finance.view', 'finance.manage',
             ]],
             'project_manager' => ['name' => 'Project Manager', 'permissions' => ['hr.employees.view', 'projects.view', 'projects.manage', 'crm.view', 'crm.manage']],
             'team_lead' => ['name' => 'Team Lead', 'permissions' => ['hr.employees.view', 'hr.leave.approve', 'projects.view', 'projects.manage', 'crm.view', 'crm.manage']],

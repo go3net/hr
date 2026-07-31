@@ -11,6 +11,7 @@ use App\Modules\Dashboard\Http\DashboardController;
 use App\Modules\Chat\Http\ChatController;
 use App\Modules\Crm\Http\CrmController;
 use App\Modules\Documents\Http\DocumentController;
+use App\Modules\Finance\Http\FinanceController;
 use App\Modules\Documents\Http\FolderController;
 use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
@@ -125,6 +126,22 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::patch('/deals/{deal}', [CrmController::class, 'updateDeal']);
             Route::get('/activities', [CrmController::class, 'activities']);
             Route::post('/activities', [CrmController::class, 'storeActivity']);
+        });
+
+        // Finance module
+        Route::prefix('finance')->middleware('module:finance')->group(function () {
+            Route::get('/summary', [FinanceController::class, 'summary']);
+            Route::get('/categories', [FinanceController::class, 'categories']);
+            Route::post('/categories', [FinanceController::class, 'storeCategory']);
+            Route::get('/transactions', [FinanceController::class, 'transactions']);
+            Route::post('/transactions', [FinanceController::class, 'storeTransaction']);
+            Route::post('/transactions/{transaction}/{decision}', [FinanceController::class, 'decideTransaction'])
+                ->whereIn('decision', ['approve', 'reject']);
+            Route::get('/invoices', [FinanceController::class, 'invoices']);
+            Route::post('/invoices', [FinanceController::class, 'storeInvoice']);
+            Route::get('/invoices/{invoice}', [FinanceController::class, 'showInvoice']);
+            Route::post('/invoices/{invoice}/send', [FinanceController::class, 'sendInvoice']);
+            Route::post('/invoices/{invoice}/payments', [FinanceController::class, 'recordPayment']);
         });
 
         // Chat module

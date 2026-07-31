@@ -756,3 +756,101 @@ export function useUpdateDeal() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["crm"] }),
   });
 }
+
+/* ── Finance ───────────────────────────────────────────────────── */
+
+export type FinanceSummary = {
+  month: string;
+  income: number;
+  expenses: number;
+  net: number;
+  outstanding_invoices: number;
+  pending_expenses: number;
+};
+
+export type TransactionRow = {
+  id: number;
+  kind: "income" | "expense";
+  amount: number;
+  description: string;
+  category: string | null;
+  occurred_on: string;
+  status: "pending" | "approved" | "rejected";
+  created_by: string | null;
+};
+
+export type InvoiceRow = {
+  id: number;
+  number: string;
+  client: string | null;
+  status: "draft" | "sent" | "partial" | "paid" | "overdue";
+  issue_date: string;
+  due_date: string | null;
+  subtotal: number;
+  tax_rate: number;
+  total: number;
+  paid_amount: number;
+};
+
+export function useFinanceSummary() {
+  return useQuery({
+    queryKey: ["finance", "summary"],
+    queryFn: () => get<FinanceSummary>("/finance/summary").then((r) => r.data),
+  });
+}
+
+export function useTransactions() {
+  return useQuery({
+    queryKey: ["finance", "transactions"],
+    queryFn: () => get<TransactionRow[]>("/finance/transactions").then((r) => r.data),
+  });
+}
+
+export function useInvoices() {
+  return useQuery({
+    queryKey: ["finance", "invoices"],
+    queryFn: () => get<InvoiceRow[]>("/finance/invoices").then((r) => r.data),
+  });
+}
+
+export function useCreateTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => post("/finance/transactions", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useDecideTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, decision }: { id: number; decision: "approve" | "reject" }) =>
+      post(`/finance/transactions/${id}/${decision}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useCreateInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => post<InvoiceRow>("/finance/invoices", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useSendInvoice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => post(`/finance/invoices/${id}/send`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}
+
+export function useRecordPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number; amount: number; paid_on: string; method?: string }) =>
+      post(`/finance/invoices/${id}/payments`, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["finance"] }),
+  });
+}

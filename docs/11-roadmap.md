@@ -29,7 +29,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 3 | Projects (kanban, milestones) | ✅ | Projects, members, milestones schema, drag-and-drop board. Sprints/Gantt/dependencies next |
 | 4 | Tasks | ✅ | Personal + project tasks, priorities, comments, my-tasks view. Recurring rules next |
 | 5 | CRM | ✅ | Leads → convert, clients, drag-and-drop deal pipeline with stage stats, activities/follow-ups. Proposals, WhatsApp/email send next |
-| 6 | Finance | 📋 | |
+| 6 | Finance | ✅ | Income/expenses with approval, invoices (line items, tax, numbering) with payments and auto-posted income, month summary. POs, budgets, cash-flow charts next |
 | 7 | Inventory | 📋 | |
 | 8 | LMS | 📋 | |
 | 9 | Documents | ✅ | Folders, uploads (S3-ready), tenant/private visibility, sharing, search, downloads. Versions/OCR/approvals next |
