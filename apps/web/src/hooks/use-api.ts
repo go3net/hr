@@ -636,3 +636,123 @@ export function useMarkConversationRead() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] }),
   });
 }
+
+/* ── CRM ───────────────────────────────────────────────────────── */
+
+export type LeadRow = {
+  id: number;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  source: string | null;
+  status: "new" | "contacted" | "qualified" | "converted" | "lost";
+  owner: string | null;
+  created_at: string;
+};
+
+export type ClientRow = {
+  id: number;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  owner: string | null;
+  deals_count: number;
+  pipeline_value: number;
+};
+
+export type DealRow = {
+  id: number;
+  title: string;
+  value: number;
+  stage: "qualification" | "proposal" | "negotiation" | "won" | "lost";
+  position: number;
+  expected_close: string | null;
+  closed_at: string | null;
+  client: { id: number; name: string; company: string | null } | null;
+  owner: string | null;
+};
+
+export type DealStats = Record<string, { count: number; value: number }>;
+
+export function useLeads() {
+  return useQuery({
+    queryKey: ["crm", "leads"],
+    queryFn: () => get<LeadRow[]>("/crm/leads").then((r) => r.data),
+  });
+}
+
+export function useClients() {
+  return useQuery({
+    queryKey: ["crm", "clients"],
+    queryFn: () => get<ClientRow[]>("/crm/clients").then((r) => r.data),
+  });
+}
+
+export function useDeals() {
+  return useQuery({
+    queryKey: ["crm", "deals"],
+    queryFn: () =>
+      get<DealRow[]>("/crm/deals").then((r) => ({
+        deals: r.data,
+        stats: (r.meta as { stats?: DealStats } | undefined)?.stats ?? {},
+      })),
+  });
+}
+
+export function useCreateLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => post("/crm/leads", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm"] }),
+  });
+}
+
+export function useConvertLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dealTitle, dealValue }: { id: number; dealTitle?: string; dealValue?: number }) =>
+      post(`/crm/leads/${id}/convert`, { deal_title: dealTitle, deal_value: dealValue }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm"] }),
+  });
+}
+
+export function useCreateClient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => post("/crm/clients", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm"] }),
+  });
+}
+
+export function useCreateDeal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => post<DealRow>("/crm/deals", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["crm"] }),
+  });
+}
+
+export function useUpdateDeal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: number } & Record<string, unknown>) =>
+      patch<DealRow>(`/crm/deals/${id}`, payload),
+    onMutate: async ({ id, ...payload }) => {
+      const key = ["crm", "deals"];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<{ deals: DealRow[]; stats: DealStats }>(key);
+      queryClient.setQueryData<{ deals: DealRow[]; stats: DealStats }>(key, (old) =>
+        old
+          ? { ...old, deals: old.deals.map((d) => (d.id === id ? ({ ...d, ...payload } as DealRow) : d)) }
+          : old,
+      );
+      return { previous, key };
+    },
+    onError: (_e, _v, context) => {
+      if (context?.previous) queryClient.setQueryData(context.key, context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["crm"] }),
+  });
+}

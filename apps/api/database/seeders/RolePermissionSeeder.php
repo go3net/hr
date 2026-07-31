@@ -27,6 +27,8 @@ class RolePermissionSeeder extends Seeder
             'projects.view' => 'View projects',
             'projects.manage' => 'Create and manage projects',
             'documents.manage' => 'Manage any document or folder',
+            'crm.view' => 'View CRM data',
+            'crm.manage' => 'Manage leads, clients and deals',
         ];
 
         foreach ($permissions as $key => $label) {
@@ -46,13 +48,13 @@ class RolePermissionSeeder extends Seeder
             ]],
             'department_manager' => ['name' => 'Department Manager', 'permissions' => [
                 'hr.employees.view', 'hr.departments.view', 'hr.attendance.view',
-                'hr.leave.view', 'hr.leave.approve',
+                'hr.leave.view', 'hr.leave.approve', 'crm.view', 'crm.manage',
             ]],
             'finance' => ['name' => 'Finance', 'permissions' => [
-                'hr.employees.view', 'hr.payroll.view', 'hr.payroll.manage',
+                'hr.employees.view', 'hr.payroll.view', 'hr.payroll.manage', 'crm.view',
             ]],
-            'project_manager' => ['name' => 'Project Manager', 'permissions' => ['hr.employees.view', 'projects.view', 'projects.manage']],
-            'team_lead' => ['name' => 'Team Lead', 'permissions' => ['hr.employees.view', 'hr.leave.approve', 'projects.view', 'projects.manage']],
+            'project_manager' => ['name' => 'Project Manager', 'permissions' => ['hr.employees.view', 'projects.view', 'projects.manage', 'crm.view', 'crm.manage']],
+            'team_lead' => ['name' => 'Team Lead', 'permissions' => ['hr.employees.view', 'hr.leave.approve', 'projects.view', 'projects.manage', 'crm.view', 'crm.manage']],
             'employee' => ['name' => 'Employee', 'permissions' => ['projects.view']],
             'nysc' => ['name' => 'NYSC Corps Member', 'permissions' => ['projects.view']],
             'intern' => ['name' => 'Intern', 'permissions' => ['projects.view']],

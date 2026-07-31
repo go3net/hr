@@ -9,6 +9,7 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Modules\Dashboard\Http\DashboardController;
 use App\Modules\Chat\Http\ChatController;
+use App\Modules\Crm\Http\CrmController;
 use App\Modules\Documents\Http\DocumentController;
 use App\Modules\Documents\Http\FolderController;
 use App\Modules\Hr\Http\AttendanceController;
@@ -109,6 +110,21 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::post('/folders', [FolderController::class, 'store']);
             Route::patch('/folders/{folder}', [FolderController::class, 'update']);
             Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
+        });
+
+        // CRM module
+        Route::prefix('crm')->middleware('module:crm')->group(function () {
+            Route::get('/leads', [CrmController::class, 'leads']);
+            Route::post('/leads', [CrmController::class, 'storeLead']);
+            Route::patch('/leads/{lead}', [CrmController::class, 'updateLead']);
+            Route::post('/leads/{lead}/convert', [CrmController::class, 'convertLead']);
+            Route::get('/clients', [CrmController::class, 'clients']);
+            Route::post('/clients', [CrmController::class, 'storeClient']);
+            Route::get('/deals', [CrmController::class, 'deals']);
+            Route::post('/deals', [CrmController::class, 'storeDeal']);
+            Route::patch('/deals/{deal}', [CrmController::class, 'updateDeal']);
+            Route::get('/activities', [CrmController::class, 'activities']);
+            Route::post('/activities', [CrmController::class, 'storeActivity']);
         });
 
         // Chat module

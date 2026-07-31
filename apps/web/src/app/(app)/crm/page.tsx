@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { CrmClient } from "./crm-client";
 
-export default function Page() {
-  return <ComingSoon module="CRM" blurb="Leads, deals, pipeline and client relationships with WhatsApp and email built in." />;
+export const metadata: Metadata = { title: "CRM" };
+
+export default function CrmPage() {
+  return <CrmClient />;
 }
