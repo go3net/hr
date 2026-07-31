@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { DocumentsClient } from "./documents-client";
 
-export default function Page() {
-  return <ComingSoon module="Documents" blurb="Version-controlled files with approvals, OCR and granular sharing." />;
+export const metadata: Metadata = { title: "Documents" };
+
+export default function DocumentsPage() {
+  return <DocumentsClient />;
 }

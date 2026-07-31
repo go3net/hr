@@ -12,6 +12,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.29",
         "laravel/tinker": "^2.10.1",
+        "league/flysystem-aws-s3-v3": "^3.35",
         "pragmarx/google2fa": "^9.0",
         "socialiteproviders/microsoft": "^4.10"
     },

@@ -32,7 +32,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 6 | Finance | 📋 | |
 | 7 | Inventory | 📋 | |
 | 8 | LMS | 📋 | |
-| 9 | Documents | 📋 | |
+| 9 | Documents | ✅ | Folders, uploads (S3-ready), tenant/private visibility, sharing, search, downloads. Versions/OCR/approvals next |
 | 10 | Chat (Reverb) | 📋 | |
 | 11 | Knowledge Base | 📋 | |
 | 12 | Help Desk | 📋 | |

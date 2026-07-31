@@ -19,11 +19,17 @@ async function proxy(request: NextRequest, path: string[]): Promise<NextResponse
   const target = `/${path.join("/")}${search}`;
 
   const hasBody = request.method !== "GET" && request.method !== "DELETE";
-  const body = hasBody ? await request.text() : undefined;
+  // Buffer the raw body so multipart uploads (documents) pass through
+  // intact; the incoming content-type (with its boundary) is preserved.
+  const body = hasBody ? Buffer.from(await request.arrayBuffer()) : undefined;
+  const requestContentType = request.headers.get("content-type");
 
   const upstream = await backendFetch(target, {
     method: request.method,
-    ...(body ? { body } : {}),
+    ...(body && body.length > 0 ? { body } : {}),
+    headers: {
+      ...(requestContentType ? { "Content-Type": requestContentType } : {}),
+    },
   }).catch(() => null);
 
   if (!upstream) {

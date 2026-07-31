@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, patch, post } from "@/lib/api";
+import { ApiError, destroy, get, patch, post } from "@/lib/api";
 
 /* ── Types mirroring the API contracts ─────────────────────────── */
 
@@ -460,5 +460,99 @@ export function useMarkAllNotificationsRead() {
   return useMutation({
     mutationFn: () => post("/notifications/read-all"),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
+
+/* ── Documents ─────────────────────────────────────────────────── */
+
+export type FolderRow = { id: number; name: string; parent_id: number | null; items: number };
+
+export type DocumentRow = {
+  id: number;
+  name: string;
+  folder_id: number | null;
+  mime: string | null;
+  size_bytes: number;
+  visibility: "tenant" | "private";
+  uploaded_by: string | null;
+  created_at: string;
+};
+
+export type DocumentListing = {
+  folders: FolderRow[];
+  documents: DocumentRow[];
+  breadcrumbs: { id: number; name: string }[];
+};
+
+export type UserRow = { id: number; name: string; email: string };
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: () => get<UserRow[]>("/users").then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useDocuments(folderId: number | null, search: string) {
+  const params = new URLSearchParams();
+  if (folderId) params.set("folder_id", String(folderId));
+  if (search) params.set("q", search);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+
+  return useQuery({
+    queryKey: ["documents", folderId, search],
+    queryFn: () => get<DocumentListing>(`/documents${qs}`).then((r) => r.data),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useUploadDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ file, folderId, visibility }: { file: File; folderId: number | null; visibility: string }) => {
+      const form = new FormData();
+      form.append("file", file);
+      if (folderId) form.append("folder_id", String(folderId));
+      form.append("visibility", visibility);
+
+      const res = await fetch("/api/backend/documents", { method: "POST", body: form });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        const fields = json?.errors as Record<string, string[]> | undefined;
+        throw new ApiError(
+          res.status,
+          json?.error?.code ?? "UPLOAD_FAILED",
+          json?.error?.message ?? (fields ? Object.values(fields)[0]?.[0] : undefined) ?? "Upload failed.",
+        );
+      }
+      return json.data as DocumentRow;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+export function useCreateFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { name: string; parent_id: number | null }) => post<FolderRow>("/folders", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/documents/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
+  });
+}
+
+export function useShareDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, userIds }: { id: number; userIds: number[] }) =>
+      post(`/documents/${id}/share`, { user_ids: userIds }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
   });
 }

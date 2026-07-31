@@ -26,6 +26,7 @@ class RolePermissionSeeder extends Seeder
             'settings.roles.manage' => 'Manage roles and permissions',
             'projects.view' => 'View projects',
             'projects.manage' => 'Create and manage projects',
+            'documents.manage' => 'Manage any document or folder',
         ];
 
         foreach ($permissions as $key => $label) {
@@ -41,7 +42,7 @@ class RolePermissionSeeder extends Seeder
                 'hr.employees.view', 'hr.employees.view_sensitive', 'hr.employees.manage',
                 'hr.departments.view', 'hr.departments.manage',
                 'hr.attendance.view', 'hr.leave.view', 'hr.leave.approve',
-                'hr.payroll.view', 'hr.payroll.manage',
+                'hr.payroll.view', 'hr.payroll.manage', 'documents.manage',
             ]],
             'department_manager' => ['name' => 'Department Manager', 'permissions' => [
                 'hr.employees.view', 'hr.departments.view', 'hr.attendance.view',

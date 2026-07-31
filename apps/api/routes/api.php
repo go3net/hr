@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\NotificationController;
 use App\Modules\Dashboard\Http\DashboardController;
+use App\Modules\Documents\Http\DocumentController;
+use App\Modules\Documents\Http\FolderController;
 use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
@@ -37,6 +39,15 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::patch('/modules/{key}', [ModuleController::class, 'update']);
+
+        // Lightweight people picker for assignees/sharing.
+        Route::get('/users', fn (\Illuminate\Http\Request $request) => response()->json([
+            'data' => \App\Models\User::query()
+                ->where('tenant_id', $request->user()->tenant_id)
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
+        ]));
 
         Route::get('/notifications', [NotificationController::class, 'index']);
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
@@ -84,6 +95,19 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         // Projects module
         Route::middleware('module:projects')->group(function () {
             Route::apiResource('projects', ProjectController::class);
+        });
+
+        // Documents module
+        Route::middleware('module:documents')->group(function () {
+            Route::get('/documents', [DocumentController::class, 'index']);
+            Route::post('/documents', [DocumentController::class, 'store']);
+            Route::get('/documents/{document}/download', [DocumentController::class, 'download']);
+            Route::patch('/documents/{document}', [DocumentController::class, 'update']);
+            Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
+            Route::post('/documents/{document}/share', [DocumentController::class, 'share']);
+            Route::post('/folders', [FolderController::class, 'store']);
+            Route::patch('/folders/{folder}', [FolderController::class, 'update']);
+            Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
         });
 
         // Tasks module
