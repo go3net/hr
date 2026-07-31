@@ -212,3 +212,87 @@ export function useClockOut() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance"] }),
   });
 }
+
+/* ── HR: payroll ───────────────────────────────────────────────── */
+
+export type PayrollRunRow = {
+  id: number;
+  period: string;
+  status: "draft" | "approved" | "published";
+  employees: number | null;
+  gross_total: number;
+  net_total: number;
+  approved_at: string | null;
+  published_at: string | null;
+  created_at: string;
+};
+
+export type PayrollItemRow = {
+  id: number;
+  employee: string | null;
+  employee_code: string | null;
+  basic: number;
+  allowances: Record<string, number> | null;
+  gross: number;
+  pension_employee: number;
+  paye_tax: number;
+  net: number;
+};
+
+export type PayrollRunDetail = PayrollRunRow & { items: PayrollItemRow[] };
+
+export type PayslipRow = PayrollItemRow & { period: string; published_at: string | null };
+
+export type BankExportRow = {
+  employee_code: string;
+  employee: string;
+  bank_name: string | null;
+  account_number: string | null;
+  amount: number;
+  narration: string;
+};
+
+export function usePayrollRuns() {
+  return useQuery({
+    queryKey: ["payroll", "runs"],
+    queryFn: () => get<PayrollRunRow[]>("/hr/payroll/runs").then((r) => r.data),
+  });
+}
+
+export function usePayrollRun(id: number | null) {
+  return useQuery({
+    queryKey: ["payroll", "run", id],
+    queryFn: () => get<PayrollRunDetail>(`/hr/payroll/runs/${id}`).then((r) => r.data),
+    enabled: id !== null,
+  });
+}
+
+export function useCreatePayrollRun() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (period: string) => post<PayrollRunRow>("/hr/payroll/runs", { period }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payroll"] }),
+  });
+}
+
+export function usePayrollAction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action }: { id: number; action: "approve" | "publish" }) =>
+      post<PayrollRunRow>(`/hr/payroll/runs/${id}/${action}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payroll"] }),
+  });
+}
+
+export function useBankExport() {
+  return useMutation({
+    mutationFn: (id: number) => get<BankExportRow[]>(`/hr/payroll/runs/${id}/bank-export`).then((r) => r.data),
+  });
+}
+
+export function useMyPayslips() {
+  return useQuery({
+    queryKey: ["payroll", "payslips"],
+    queryFn: () => get<PayslipRow[]>("/hr/payslips/mine").then((r) => r.data),
+  });
+}

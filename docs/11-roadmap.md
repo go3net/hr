@@ -23,7 +23,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | 2 | HR: employees, departments, positions, offices | ✅ | Digital personnel file fields incl. encrypted NIN/BVN/bank |
 | 2 | HR: attendance (GPS geofence, QR, late detection) | ✅ | Biometric/face = integration points |
 | 2 | HR: leave (types, balances, approval workflow) | ✅ | |
-| 2 | HR: payroll | 🏗️ | Schema + run lifecycle designed; PAYE engine next |
+| 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslips, bank export CSV. Payslip PDFs next |
 | 2 | HR: onboarding docs, assets, exit | 📋 | |
 | 2 | HR: recruitment ATS, performance (KPI/OKR) | 📋 | |
 | 3 | Projects (kanban, milestones) | 🏗️ | Schema designed; API scaffold pattern established |
@@ -54,7 +54,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Payroll engine (PAYE/pension tables + run lifecycle + payslip PDFs) — highest customer value.
+1. Payslip PDF generation (queued) + payroll adjustments (bonuses, loans, one-off deductions).
 2. OAuth + 2FA wiring; notifications (email templates + FCM).
 3. Projects/Tasks module APIs + kanban UI (pattern already set by HR).
 4. Chat via Reverb; Documents on S3.

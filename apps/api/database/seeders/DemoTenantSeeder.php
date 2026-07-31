@@ -71,14 +71,14 @@ class DemoTenantSeeder extends Seeder
         }
 
         $staff = [
-            ['G3N-001', 'Adaeze', 'Okafor', 'Engineering', 'Engineering Lead', $admin->id],
-            ['G3N-002', 'Tunde', 'Bakare', 'People Ops', 'HR Manager', null],
-            ['G3N-003', 'Grace', 'Eze', 'Finance', 'Finance Officer', null],
-            ['G3N-004', 'Emeka', 'Nwosu', 'Engineering', 'Backend Engineer', null],
-            ['G3N-005', 'Fatima', 'Bello', 'Design', 'Product Designer', null],
+            ['G3N-001', 'Adaeze', 'Okafor', 'Engineering', 'Engineering Lead', $admin->id, 850_000],
+            ['G3N-002', 'Tunde', 'Bakare', 'People Ops', 'HR Manager', null, 650_000],
+            ['G3N-003', 'Grace', 'Eze', 'Finance', 'Finance Officer', null, 500_000],
+            ['G3N-004', 'Emeka', 'Nwosu', 'Engineering', 'Backend Engineer', null, 550_000],
+            ['G3N-005', 'Fatima', 'Bello', 'Design', 'Product Designer', null, 480_000],
         ];
 
-        foreach ($staff as [$code, $first, $last, $dept, $position, $userId]) {
+        foreach ($staff as [$code, $first, $last, $dept, $position, $userId, $salary]) {
             Employee::query()->firstOrCreate(
                 ['tenant_id' => $tenant->id, 'employee_code' => $code],
                 [
@@ -92,6 +92,11 @@ class DemoTenantSeeder extends Seeder
                     'employment_type' => 'full_time',
                     'hired_at' => now()->subMonths(rand(3, 30))->toDateString(),
                     'status' => 'active',
+                    'base_salary' => $salary,
+                    'allowances' => [
+                        'housing' => (int) round($salary * 0.15),
+                        'transport' => (int) round($salary * 0.10),
+                    ],
                 ],
             );
         }

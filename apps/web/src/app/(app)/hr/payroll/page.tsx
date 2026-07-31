@@ -1,5 +1,8 @@
-import { ComingSoon } from "@/components/coming-soon";
+import type { Metadata } from "next";
+import { PayrollClient } from "./payroll-client";
 
-export default function Page() {
-  return <ComingSoon module="Payroll" blurb="Salary structures, PAYE and pension, payslips and bank export files." />;
+export const metadata: Metadata = { title: "Payroll" };
+
+export default function PayrollPage() {
+  return <PayrollClient />;
 }

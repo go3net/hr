@@ -9,6 +9,7 @@ use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
 use App\Modules\Hr\Http\LeaveController;
+use App\Modules\Hr\Http\PayrollController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('tenant')->group(function () {
@@ -52,6 +53,14 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::post('/leave-requests/{leaveRequest}/approve', [LeaveController::class, 'approve']);
             Route::post('/leave-requests/{leaveRequest}/reject', [LeaveController::class, 'reject']);
             Route::get('/leave-balances', [LeaveController::class, 'balances']);
+
+            Route::get('/payroll/runs', [PayrollController::class, 'index']);
+            Route::post('/payroll/runs', [PayrollController::class, 'store']);
+            Route::get('/payroll/runs/{payrollRun}', [PayrollController::class, 'show']);
+            Route::post('/payroll/runs/{payrollRun}/approve', [PayrollController::class, 'approve']);
+            Route::post('/payroll/runs/{payrollRun}/publish', [PayrollController::class, 'publish']);
+            Route::get('/payroll/runs/{payrollRun}/bank-export', [PayrollController::class, 'bankExport']);
+            Route::get('/payslips/mine', [PayrollController::class, 'myPayslips']);
         });
     });
 });
