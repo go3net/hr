@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ['prefix' => 'api', 'middleware' => ['auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a TLS-terminating edge (Railway, Cloudflare, nginx) the
+        // app must honour X-Forwarded-* so generated URLs are https.
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'module' => EnsureModuleEnabled::class,
