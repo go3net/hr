@@ -33,7 +33,7 @@ jobs:
           php artisan key:generate
 
       - name: Run tests
-        run: php artisan test --parallel
+        run: php artisan test
 
   web-build:
     name: Web · lint, typecheck, build
