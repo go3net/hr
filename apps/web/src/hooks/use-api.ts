@@ -52,6 +52,7 @@ export type EmployeeRow = {
   id: string;
   employee_id: number;
   employee_code: string;
+  account_status: "invited" | "active" | "disabled" | null;
   name: string;
   email: string | null;
   department: string | null;
@@ -1817,5 +1818,14 @@ export function useDashboardCharts() {
     queryKey: ["dashboard", "charts"],
     queryFn: () => get<DashboardCharts>("/dashboard/charts").then((r) => r.data),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useInviteEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (publicId: string) =>
+      post<{ invited: boolean; email: string }>(`/hr/employees/${publicId}/invite`).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
   });
 }

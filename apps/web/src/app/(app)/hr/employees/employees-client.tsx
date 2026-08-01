@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Loader2, UsersRound } from "lucide-react";
+import { Plus, Search, Loader2, Send, UsersRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
-import { useCreateEmployee, useDepartments, useEmployees } from "@/hooks/use-api";
+import { type EmployeeRow, useCreateEmployee, useDepartments, useEmployees, useInviteEmployee } from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -38,6 +38,7 @@ const schema = z.object({
   employment_type: z.enum(["full_time", "contract", "nysc", "intern"]),
   department_id: z.string(),
   hired_at: z.string(),
+  invite: z.boolean().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -55,7 +56,7 @@ function AddEmployeeDialog() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { employment_type: "full_time", department_id: "", email: "", hired_at: "" },
+    defaultValues: { employment_type: "full_time", department_id: "", email: "", hired_at: "", invite: true },
   });
 
   const onSubmit = (values: FormValues) => {
@@ -66,6 +67,7 @@ function AddEmployeeDialog() {
         email: values.email || undefined,
         department_id: values.department_id ? Number(values.department_id) : undefined,
         hired_at: values.hired_at || undefined,
+        invite: Boolean(values.invite && values.email),
       },
       {
         onSuccess: () => {
@@ -127,6 +129,11 @@ function AddEmployeeDialog() {
             <FieldError message={errors.email?.message} />
           </div>
 
+          <label className="flex cursor-pointer items-center gap-2 text-[13px] text-foreground">
+            <input type="checkbox" {...register("invite")} className="size-3.5 accent-[var(--primary,#2DA9DD)]" />
+            Email an invitation so they can set up their own account
+          </label>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="employment_type">Type</Label>
@@ -157,6 +164,33 @@ function AddEmployeeDialog() {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AccountCell({ employee }: { employee: EmployeeRow }) {
+  const invite = useInviteEmployee();
+  const [sent, setSent] = useState(false);
+
+  if (employee.account_status === "active") {
+    return <Badge variant="success">Active</Badge>;
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      {employee.account_status === "invited" ? <Badge variant="warning">Invited</Badge> : <Badge variant="neutral">None</Badge>}
+      {employee.email && employee.status !== "exited" ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2 text-[11px]"
+          onClick={() => invite.mutate(employee.id, { onSuccess: () => setSent(true) })}
+          disabled={invite.isPending || sent}
+        >
+          {invite.isPending ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
+          {sent ? "Sent" : employee.account_status === "invited" ? "Resend" : "Invite"}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
@@ -195,6 +229,7 @@ export function EmployeesClient() {
                 <th className="px-4 py-3">Position</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Account</th>
                 <th className="px-4 py-3">Hired</th>
               </tr>
             </thead>
@@ -202,7 +237,7 @@ export function EmployeesClient() {
               {isPending &&
                 [1, 2, 3, 4, 5].map((i) => (
                   <tr key={i} className="border-b border-border/60 last:border-0">
-                    <td className="px-4 py-3" colSpan={7}>
+                    <td className="px-4 py-3" colSpan={8}>
                       <Skeleton className="h-8 w-full" />
                     </td>
                   </tr>
@@ -225,6 +260,9 @@ export function EmployeesClient() {
                   <td className="px-4 py-2.5">
                     <Badge variant={statusVariant[e.status] ?? "neutral"}>{e.status.replace("_", " ")}</Badge>
                   </td>
+                  <td className="px-4 py-2.5">
+                    <AccountCell employee={e} />
+                  </td>
                   <td className="px-4 py-2.5 tabular-nums text-muted-foreground">
                     {e.hired_at ? formatDate(e.hired_at) : "—"}
                   </td>
@@ -232,7 +270,7 @@ export function EmployeesClient() {
               ))}
               {!isPending && !isError && employees?.length === 0 && (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={8}>
                     <div className="flex flex-col items-center gap-3 py-16 text-center">
                       <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15">
                         <UsersRound className="size-5 text-primary" strokeWidth={1.75} />
@@ -251,7 +289,7 @@ export function EmployeesClient() {
               )}
               {isError && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+                  <td colSpan={8} className="px-4 py-10 text-center text-[13px] text-muted-foreground">
                     Could not load employees — check that the API is running, then refresh.
                   </td>
                 </tr>
