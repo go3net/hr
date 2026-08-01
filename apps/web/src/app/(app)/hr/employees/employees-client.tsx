@@ -1,0 +1,265 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Search, Loader2, UsersRound } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input, Label, FieldError } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
+import { useCreateEmployee, useDepartments, useEmployees } from "@/hooks/use-api";
+import { ApiError } from "@/lib/api";
+import { formatDate } from "@/lib/utils";
+
+const statusVariant: Record<string, "success" | "warning" | "danger" | "neutral"> = {
+  active: "success",
+  on_leave: "warning",
+  suspended: "danger",
+  exited: "neutral",
+};
+
+const typeLabels: Record<string, string> = {
+  full_time: "Full-time",
+  contract: "Contract",
+  nysc: "NYSC",
+  intern: "Intern",
+};
+
+const schema = z.object({
+  employee_code: z.string().min(1, "Required"),
+  first_name: z.string().min(1, "Required"),
+  last_name: z.string().min(1, "Required"),
+  email: z.string().email("Enter a valid email").or(z.literal("")),
+  employment_type: z.enum(["full_time", "contract", "nysc", "intern"]),
+  department_id: z.string(),
+  hired_at: z.string(),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+function AddEmployeeDialog() {
+  const [open, setOpen] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const { data: departments } = useDepartments();
+  const createEmployee = useCreateEmployee();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { employment_type: "full_time", department_id: "", email: "", hired_at: "" },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    setServerError(null);
+    createEmployee.mutate(
+      {
+        ...values,
+        email: values.email || undefined,
+        department_id: values.department_id ? Number(values.department_id) : undefined,
+        hired_at: values.hired_at || undefined,
+      },
+      {
+        onSuccess: () => {
+          reset();
+          setOpen(false);
+        },
+        onError: (error) =>
+          setServerError(error instanceof ApiError ? error.message : "Could not add employee."),
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus /> Add employee
+        </Button>
+      </DialogTrigger>
+      <DialogContent
+        title="Add employee"
+        description="Creates the profile — documents and payroll details can be added after."
+      >
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
+          {serverError && (
+            <div className="rounded-[10px] border border-danger/30 bg-[var(--danger-soft)] px-3 py-2.5 text-[13px] text-danger">
+              {serverError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="first_name">First name</Label>
+              <Input id="first_name" {...register("first_name")} />
+              <FieldError message={errors.first_name?.message} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="last_name">Last name</Label>
+              <Input id="last_name" {...register("last_name")} />
+              <FieldError message={errors.last_name?.message} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="employee_code">Employee code</Label>
+              <Input id="employee_code" placeholder="G3N-011" {...register("employee_code")} />
+              <FieldError message={errors.employee_code?.message} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="hired_at">Hire date</Label>
+              <Input id="hired_at" type="date" {...register("hired_at")} />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Work email</Label>
+            <Input id="email" type="email" placeholder="name@company.com" {...register("email")} />
+            <FieldError message={errors.email?.message} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="employment_type">Type</Label>
+              <Select id="employment_type" {...register("employment_type")}>
+                <option value="full_time">Full-time</option>
+                <option value="contract">Contract</option>
+                <option value="nysc">NYSC</option>
+                <option value="intern">Intern</option>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="department_id">Department</Label>
+              <Select id="department_id" {...register("department_id")}>
+                <option value="">No department</option>
+                {departments?.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <Button className="w-full" type="submit" disabled={createEmployee.isPending}>
+            {createEmployee.isPending && <Loader2 className="animate-spin" />}
+            Add employee
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function EmployeesClient() {
+  const [search, setSearch] = useState("");
+  const { data: employees, isPending, isError } = useEmployees(search);
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em]">Employees</h1>
+          {employees && <Badge variant="primary">{employees.length}</Badge>}
+        </div>
+        <AddEmployeeDialog />
+      </div>
+
+      <div className="relative min-w-[240px] max-w-sm">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.75} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, code, or email…"
+          className="h-9 w-full rounded-[10px] border border-border bg-surface pl-9 pr-3 text-sm shadow-card placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-left text-[12px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
+                <th className="px-4 py-3">Employee</th>
+                <th className="px-4 py-3">Code</th>
+                <th className="px-4 py-3">Department</th>
+                <th className="px-4 py-3">Position</th>
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Hired</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isPending &&
+                [1, 2, 3, 4, 5].map((i) => (
+                  <tr key={i} className="border-b border-border/60 last:border-0">
+                    <td className="px-4 py-3" colSpan={7}>
+                      <Skeleton className="h-8 w-full" />
+                    </td>
+                  </tr>
+                ))}
+              {employees?.map((e) => (
+                <tr key={e.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/50">
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={e.name} size={32} />
+                      <div>
+                        <p className="font-medium">{e.name}</p>
+                        <p className="text-[12px] text-muted-foreground">{e.email ?? "—"}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 tabular-nums text-muted-foreground">{e.employee_code}</td>
+                  <td className="px-4 py-2.5">{e.department ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{e.position ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-muted-foreground">{typeLabels[e.employment_type] ?? e.employment_type}</td>
+                  <td className="px-4 py-2.5">
+                    <Badge variant={statusVariant[e.status] ?? "neutral"}>{e.status.replace("_", " ")}</Badge>
+                  </td>
+                  <td className="px-4 py-2.5 tabular-nums text-muted-foreground">
+                    {e.hired_at ? formatDate(e.hired_at) : "—"}
+                  </td>
+                </tr>
+              ))}
+              {!isPending && !isError && employees?.length === 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="flex flex-col items-center gap-3 py-16 text-center">
+                      <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15">
+                        <UsersRound className="size-5 text-primary" strokeWidth={1.75} />
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium">
+                          {search ? "No employees match your search" : "No employees yet"}
+                        </p>
+                        <p className="mt-1 text-[13px] text-muted-foreground">
+                          {search ? "Try a different name or code." : "Add your first employee to get started."}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {isError && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+                    Could not load employees — check that the API is running, then refresh.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}

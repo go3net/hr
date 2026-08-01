@@ -57,6 +57,8 @@ Default seeded login: `admin@go3net.com` / `password` (change immediately).
 | Backup, DR & Scaling | [docs/09-operations.md](docs/09-operations.md) |
 | User Flows | [docs/10-user-flows.md](docs/10-user-flows.md) |
 | Roadmap & Module Status | [docs/11-roadmap.md](docs/11-roadmap.md) |
+| Production Deployment Runbook (VPS) | [docs/12-deployment-runbook.md](docs/12-deployment-runbook.md) |
+| Railway Deployment Guide | [docs/13-railway-deployment.md](docs/13-railway-deployment.md) |
 
 ## Brand
 

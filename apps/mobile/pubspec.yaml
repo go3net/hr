@@ -1,0 +1,32 @@
+name: go3net_office
+description: Go3net Office mobile app — attendance, leave, payslips, tasks and chat.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.7.0                 # HTTP client (auth + tenant interceptors)
+  flutter_riverpod: ^2.6.1    # state management
+  go_router: ^14.6.0          # navigation
+  drift: ^2.22.0              # offline-first local database
+  sqlite3_flutter_libs: ^0.5.26
+  path_provider: ^2.1.5
+  flutter_secure_storage: ^9.2.2  # token storage
+  geolocator: ^13.0.2         # GPS attendance
+  mobile_scanner: ^6.0.2      # QR attendance
+  firebase_messaging: ^15.1.5 # push notifications
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  drift_dev: ^2.22.0
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true

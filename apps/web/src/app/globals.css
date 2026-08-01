@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Go3net Office design tokens ─────────────────────────────── */
+:root {
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border: #e2e8f0;
+  --foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --primary: #2da9dd;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --accent: #00c2ff;
+  --success: #16a34a;
+  --success-soft: rgb(34 197 94 / 0.12);
+  --warning: #d97706;
+  --warning-soft: rgb(245 158 11 / 0.14);
+  --danger: #dc2626;
+  --danger-soft: rgb(239 68 68 / 0.12);
+  --ring: rgb(0 194 255 / 0.55);
+  --radius: 0.625rem;
+  --chart-1: #2da9dd; /* validated vs #fff surface (relief: tooltips + labels) */
+  --chart-2: #8b5cf6;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-pop: 0 4px 12px rgb(15 23 42 / 0.08);
+  --shadow-modal: 0 12px 32px rgb(15 23 42 / 0.12);
+}
+
+.dark {
+  --background: #0b1220;
+  --surface: #111a2e;
+  --surface-elevated: #16213b;
+  --border: #1f2a44;
+  --foreground: #f1f5f9;
+  --muted: #16213b;
+  --muted-foreground: #94a3b8;
+  --primary: #2da9dd;
+  --primary-foreground: #062a3b;
+  --secondary: #e2e8f0;
+  --secondary-foreground: #0f172a;
+  --success: #34d399;
+  --success-soft: rgb(52 211 153 / 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgb(251 191 36 / 0.14);
+  --danger: #f87171;
+  --danger-soft: rgb(248 113 113 / 0.14);
+  --chart-1: #2596c6; /* validated vs #111A2E surface */
+  --chart-2: #8b5cf6;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4);
+  --shadow-modal: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-modal: var(--shadow-modal);
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(45 169 221 / 0.25);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    color-mix(in oklab, var(--muted), var(--surface) 60%) 37%,
+    var(--muted) 63%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
