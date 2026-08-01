@@ -17,7 +17,7 @@ class EmployeeController extends ApiController
         $this->requirePermission('hr.employees.view');
 
         $employees = Employee::query()
-            ->with(['department:id,name', 'position:id,title'])
+            ->with(['department:id,name', 'position:id,title', 'user:id,status'])
             ->when($request->query('q'), function ($query, $q) {
                 $query->where(fn ($w) => $w
                     ->where('first_name', 'like', "%{$q}%")
@@ -64,12 +64,31 @@ class EmployeeController extends ApiController
             'bvn' => ['nullable', 'string', 'max:20'],
             'bank_name' => ['nullable', 'string', 'max:80'],
             'bank_account_number' => ['nullable', 'string', 'max:20'],
+            'invite' => ['sometimes', 'boolean'],
         ]);
+
+        $invite = (bool) ($data['invite'] ?? false);
+        unset($data['invite']);
 
         $employee = Employee::create($data);
         AuditLog::record('employee.created', $employee);
 
+        if ($invite && $employee->email) {
+            app(\App\Modules\Hr\Services\InvitationService::class)->invite($employee, $request->user());
+        }
+
         return $this->respond($this->present($employee->fresh(['department', 'position'])), 201);
+    }
+
+    /** Send (or re-send) the account setup invitation email. */
+    public function sendInvite(Request $request, Employee $employee): JsonResponse
+    {
+        $this->requirePermission('hr.employees.manage');
+
+        $user = app(\App\Modules\Hr\Services\InvitationService::class)
+            ->invite($employee, $request->user());
+
+        return $this->respond(['invited' => true, 'email' => $user->email]);
     }
 
     public function show(Request $request, Employee $employee): JsonResponse
@@ -126,6 +145,7 @@ class EmployeeController extends ApiController
             'id' => $e->public_id,
             'employee_id' => $e->id, // internal id for pickers (assets, objectives)
             'employee_code' => $e->employee_code,
+            'account_status' => $e->user?->status, // null | invited | active | disabled
             'name' => $e->full_name,
             'email' => $e->email,
             'department' => $e->department?->name,

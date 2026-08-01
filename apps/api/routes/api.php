@@ -43,6 +43,8 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
     Route::get('/auth/oauth/{provider}/callback', [OAuthController::class, 'callback'])->middleware('throttle:20,1');
     Route::post('/auth/oauth/exchange', [OAuthController::class, 'exchange'])->middleware('throttle:10,1');
     Route::post('/billing/webhook/paystack', [BillingController::class, 'webhook'])->middleware('throttle:60,1');
+    Route::get('/auth/invitation', [\App\Http\Controllers\Auth\InvitationController::class, 'show'])->middleware('throttle:20,1');
+    Route::post('/auth/invitation/accept', [\App\Http\Controllers\Auth\InvitationController::class, 'accept'])->middleware('throttle:10,1');
 
     // Authenticated
     Route::middleware(['auth:sanctum'])->group(function () {
@@ -120,6 +122,7 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         Route::prefix('hr')->middleware('module:hr')->group(function () {
             Route::get('/employees', [EmployeeController::class, 'index']);
             Route::post('/employees', [EmployeeController::class, 'store']);
+            Route::post('/employees/{employee:public_id}/invite', [EmployeeController::class, 'sendInvite']);
             Route::get('/employees/{employee:public_id}', [EmployeeController::class, 'show']);
             Route::patch('/employees/{employee:public_id}', [EmployeeController::class, 'update']);
             Route::delete('/employees/{employee:public_id}', [EmployeeController::class, 'destroy']);
