@@ -12,7 +12,7 @@ Status of this repository against the full product scope. ✅ implemented here �
 | RBAC (system roles, permissions, policies) | ✅ | Incl. custom tenant roles CRUD |
 | Module registry + per-tenant toggles + middleware | ✅ | |
 | Audit logging | ✅ | Trait + writer on state changes |
-| Notifications (in-app + email) | ✅ | Bell center + queued mail; FCM push/SMS/WhatsApp adapters next |
+| Notifications (in-app + email + push) | ✅ | Bell center, queued mail, and FCM push (HTTP v1 with service-account auth, device registry, dead-token pruning — set FIREBASE_CREDENTIALS). SMS/WhatsApp adapters next |
 | Billing & subscriptions | ✅ | Paystack checkout + signed webhooks, 3-plan catalog, 14-day trial, renewal-preserving period extension, 402 lock on expiry (billing/auth stay reachable), payment history UI. Per-plan seat limits + proration next |
 | White-label branding | ✅ | Per-tenant display name, logo upload (streamed via BFF), primary/accent colors applied as runtime CSS vars for every member. Custom domains + email templates next |
 | Custom roles CRUD | ✅ | Tenant-scoped roles with grouped permission picker, member role assignment, system roles immutable, self-super-admin-removal lockout guard |
@@ -55,6 +55,5 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. FCM push notifications (mobile + web).
-2. Flutter mobile feature build-out against the stabilized API.
-3. Deploy: provision hosting, run docker-compose stack, connect Paystack/Anthropic/OAuth keys.
+1. Flutter mobile feature build-out against the stabilized API (device-token registration endpoint ready).
+2. Deploy: provision hosting, run docker-compose stack, connect Paystack/Anthropic/OAuth keys.

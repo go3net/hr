@@ -49,6 +49,29 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         Route::post('/auth/logout', [LoginController::class, 'logout']);
         Route::get('/me', [MeController::class, 'show']);
         Route::get('/me/bootstrap', [MeController::class, 'bootstrap']);
+        // Push notification device registry (mobile/web clients)
+        Route::post('/me/device-tokens', function (\Illuminate\Http\Request $request) {
+            $data = $request->validate([
+                'token' => ['required', 'string', 'max:512'],
+                'platform' => ['required', 'in:'.implode(',', \App\Models\DeviceToken::PLATFORMS)],
+            ]);
+            \App\Models\DeviceToken::query()->updateOrCreate(
+                ['user_id' => $request->user()->id, 'token' => $data['token']],
+                ['platform' => $data['platform'], 'last_seen_at' => now()],
+            );
+
+            return response()->json(['data' => ['registered' => true]], 201);
+        });
+        Route::delete('/me/device-tokens', function (\Illuminate\Http\Request $request) {
+            $data = $request->validate(['token' => ['required', 'string', 'max:512']]);
+            \App\Models\DeviceToken::query()
+                ->where('user_id', $request->user()->id)
+                ->where('token', $data['token'])
+                ->delete();
+
+            return response()->json(['data' => ['removed' => true]]);
+        });
+
         Route::post('/me/two-factor/enable', [TwoFactorController::class, 'enable']);
         Route::post('/me/two-factor/confirm', [TwoFactorController::class, 'confirm']);
         Route::post('/me/two-factor/disable', [TwoFactorController::class, 'disable']);

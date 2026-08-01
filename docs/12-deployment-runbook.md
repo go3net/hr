@@ -91,6 +91,10 @@ PAYSTACK_SECRET_KEY=sk_live_...
 PAYSTACK_PUBLIC_KEY=pk_live_...
 ANTHROPIC_API_KEY=sk-ant-...
 
+# Push notifications (Firebase service-account JSON, inline or a path
+# mounted into the api/worker containers; blank = no push)
+FIREBASE_CREDENTIALS=
+
 # OAuth sign-in (optional)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -168,6 +172,14 @@ OAuth is **sign-in only** — accounts must already exist in a workspace.
 Nothing beyond `ANTHROPIC_API_KEY`. The `/assistant` page activates on the
 next page load; without the key every AI endpoint returns a clean
 `AI_NOT_CONFIGURED` and the UI shows a setup notice.
+
+### Push notifications (FCM)
+Create a Firebase project → Project settings → Service accounts →
+Generate new private key, and set the downloaded JSON as
+`FIREBASE_CREDENTIALS` (inline, single line) in `.env`. Every in-app
+notification then also pushes to any device a user has registered via
+`POST /api/v1/me/device-tokens` (the mobile app does this on login).
+Dead tokens are pruned automatically when FCM reports them unregistered.
 
 ## 7. Verifying the deployment
 

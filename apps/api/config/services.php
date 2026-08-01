@@ -54,4 +54,9 @@ return [
         ],
     ],
 
+    // Firebase Cloud Messaging — inline service-account JSON or a file path.
+    'fcm' => [
+        'credentials' => env('FIREBASE_CREDENTIALS'),
+    ],
+
 ];

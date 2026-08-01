@@ -61,6 +61,7 @@ services:
       REVERB_SCHEME: http
       # Integrations (blank disables the feature gracefully)
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      FIREBASE_CREDENTIALS: ${FIREBASE_CREDENTIALS:-}
       PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
       PAYSTACK_PUBLIC_KEY: ${PAYSTACK_PUBLIC_KEY:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}

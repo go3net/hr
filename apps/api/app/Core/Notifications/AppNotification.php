@@ -2,6 +2,8 @@
 
 namespace App\Core\Notifications;
 
+use App\Core\Push\FcmChannel;
+use App\Core\Push\FcmGateway;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -26,7 +28,16 @@ abstract class AppNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database', 'mail'];
+
+        // Push rides along whenever FCM is configured and the user has a
+        // registered device — evaluated at send time, on the queue.
+        if (app(FcmGateway::class)->isConfigured()
+            && \App\Models\DeviceToken::withoutGlobalScopes()->where('user_id', $notifiable->id)->exists()) {
+            $channels[] = FcmChannel::class;
+        }
+
+        return $channels;
     }
 
     public function toDatabase(object $notifiable): array
