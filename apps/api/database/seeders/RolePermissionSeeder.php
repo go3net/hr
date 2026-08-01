@@ -25,6 +25,7 @@ class RolePermissionSeeder extends Seeder
             'settings.modules.manage' => 'Enable or disable modules',
             'settings.roles.manage' => 'Manage roles and permissions',
             'settings.billing.manage' => 'Manage billing and subscription',
+            'settings.branding.manage' => 'Manage workspace branding',
             'projects.view' => 'View projects',
             'projects.manage' => 'Create and manage projects',
             'documents.manage' => 'Manage any document or folder',

@@ -9,12 +9,13 @@ Status of this repository against the full product scope. ✅ implemented here �
 | Multi-tenant core (TenantScope, resolver, context) | ✅ | Shared-DB row scoping; RLS documented |
 | Auth: register tenant, login, Sanctum tokens | ✅ | |
 | 2FA (TOTP), OAuth Google/Microsoft/GitHub | ✅ | Enroll/confirm/challenge with single-use recovery codes; OAuth sign-in via one-time exchange codes (set provider credentials in .env) |
-| RBAC (system roles, permissions, policies) | ✅ | Custom roles CRUD next |
+| RBAC (system roles, permissions, policies) | ✅ | Incl. custom tenant roles CRUD |
 | Module registry + per-tenant toggles + middleware | ✅ | |
 | Audit logging | ✅ | Trait + writer on state changes |
 | Notifications (in-app + email) | ✅ | Bell center + queued mail; FCM push/SMS/WhatsApp adapters next |
 | Billing & subscriptions | ✅ | Paystack checkout + signed webhooks, 3-plan catalog, 14-day trial, renewal-preserving period extension, 402 lock on expiry (billing/auth stay reachable), payment history UI. Per-plan seat limits + proration next |
-| White-label branding | 📋 | |
+| White-label branding | ✅ | Per-tenant display name, logo upload (streamed via BFF), primary/accent colors applied as runtime CSS vars for every member. Custom domains + email templates next |
+| Custom roles CRUD | ✅ | Tenant-scoped roles with grouped permission picker, member role assignment, system roles immutable, self-super-admin-removal lockout guard |
 
 ## Modules
 | # | Module | Status | Notes |
@@ -55,7 +56,6 @@ Status of this repository against the full product scope. ✅ implemented here �
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. White-label branding + custom roles CRUD.
+1. Real dashboard chart endpoints (attendance/revenue trends currently sample-labeled).
 2. FCM push notifications (mobile + web).
 3. Flutter mobile feature build-out against the stabilized API.
-4. Real dashboard chart endpoints (attendance/revenue trends currently sample-labeled).

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useBootstrap } from "@/hooks/use-api";
 import {
   LayoutDashboard,
   Users,
@@ -72,14 +73,26 @@ const nav = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useBootstrap();
+  const branding = session?.tenant?.branding;
+  const workspaceName = branding?.display_name ?? "Go3net Office";
 
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-border bg-surface lg:flex">
       <div className="flex h-14 items-center gap-2.5 px-5">
-        <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-[13px] font-bold text-white">
-          G
-        </span>
-        <span className="text-[15px] font-semibold tracking-[-0.01em]">Go3net Office</span>
+        {branding?.logo_path ? (
+          // eslint-disable-next-line @next/next/no-img-element -- tenant logo streams through the authenticated BFF
+          <img
+            src="/api/backend/settings/branding/logo"
+            alt={workspaceName}
+            className="size-7 rounded-lg object-contain"
+          />
+        ) : (
+          <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-[13px] font-bold text-white">
+            {workspaceName.charAt(0).toUpperCase()}
+          </span>
+        )}
+        <span className="truncate text-[15px] font-semibold tracking-[-0.01em]">{workspaceName}</span>
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">

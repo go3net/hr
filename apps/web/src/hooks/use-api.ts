@@ -7,7 +7,18 @@ import { ApiError, destroy, get, patch, post } from "@/lib/api";
 
 export type Bootstrap = {
   user: { id: number; name: string; email: string };
-  tenant: { id: number; name: string; subdomain: string; status: string; branding: unknown } | null;
+  tenant: {
+    id: number;
+    name: string;
+    subdomain: string;
+    status: string;
+    branding: {
+      display_name?: string;
+      primary_color?: string;
+      accent_color?: string;
+      logo_path?: string;
+    } | null;
+  } | null;
   modules: { key: string; name: string; enabled: boolean }[];
   subscription: {
     state: "active" | "trial" | "expired" | "complimentary";
@@ -1674,5 +1685,121 @@ export function useCompleteExit() {
       queryClient.invalidateQueries({ queryKey: ["lifecycle"] });
       queryClient.invalidateQueries({ queryKey: ["employees"] });
     },
+  });
+}
+
+/* ── Workspace settings: branding + roles ──────────────────────── */
+
+export type BrandingInfo = {
+  display_name: string | null;
+  primary_color: string | null;
+  accent_color: string | null;
+  has_logo: boolean;
+};
+
+export function useBranding() {
+  return useQuery({
+    queryKey: ["settings", "branding"],
+    queryFn: () => get<BrandingInfo>("/settings/branding").then((r) => r.data),
+  });
+}
+
+export function useUpdateBranding() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Partial<BrandingInfo>) =>
+      patch<BrandingInfo>("/settings/branding", payload).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings", "branding"] });
+      queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
+    },
+  });
+}
+
+export function useUploadLogo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("logo", file);
+      const res = await fetch("/api/backend/settings/branding/logo", { method: "POST", body: form });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new ApiError(res.status, json?.error?.code ?? "UPLOAD_FAILED", json?.error?.message ?? "Upload failed.");
+      }
+      return json.data as BrandingInfo;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings", "branding"] });
+      queryClient.invalidateQueries({ queryKey: ["bootstrap"] });
+    },
+  });
+}
+
+export type RoleRow = {
+  id: number;
+  key: string;
+  name: string;
+  is_system: boolean;
+  permissions: string[];
+  members: number;
+};
+
+export type PermissionRow = { key: string; label: string; group: string };
+
+export type MemberRow = {
+  id: number;
+  name: string;
+  email: string;
+  roles: { id: number; key: string; name: string }[];
+};
+
+export function useRoles() {
+  return useQuery({
+    queryKey: ["settings", "roles"],
+    queryFn: () => get<RoleRow[]>("/settings/roles").then((r) => r.data),
+  });
+}
+
+export function usePermissionsCatalog() {
+  return useQuery({
+    queryKey: ["settings", "permissions"],
+    queryFn: () => get<PermissionRow[]>("/settings/permissions").then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useSaveRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id?: number; name: string; permissions: string[] }) =>
+      (id ? patch<RoleRow>(`/settings/roles/${id}`, payload) : post<RoleRow>("/settings/roles", payload)).then(
+        (r) => r.data,
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
+  });
+}
+
+export function useDeleteRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/settings/roles/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
+  });
+}
+
+export function useMembers() {
+  return useQuery({
+    queryKey: ["settings", "members"],
+    queryFn: () => get<MemberRow[]>("/settings/users").then((r) => r.data),
+  });
+}
+
+export function useAssignRoles() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, role_ids }: { userId: number; role_ids: number[] }) =>
+      patch(`/settings/users/${userId}/roles`, { role_ids }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", "members"] }),
   });
 }

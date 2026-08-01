@@ -29,6 +29,8 @@ use App\Modules\Inventory\Http\InventoryController;
 use App\Modules\Knowledge\Http\KnowledgeController;
 use App\Modules\Lms\Http\LmsController;
 use App\Modules\Projects\Http\ProjectController;
+use App\Modules\Settings\Http\BrandingController;
+use App\Modules\Settings\Http\RoleController;
 use App\Modules\Tasks\Http\TaskController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +56,19 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         Route::get('/billing', [BillingController::class, 'show']);
         Route::post('/billing/checkout', [BillingController::class, 'checkout']);
         Route::post('/billing/verify', [BillingController::class, 'verify'])->middleware('throttle:20,1');
+
+        // Workspace settings: branding + roles
+        Route::get('/settings/branding', [BrandingController::class, 'show']);
+        Route::patch('/settings/branding', [BrandingController::class, 'update']);
+        Route::post('/settings/branding/logo', [BrandingController::class, 'uploadLogo']);
+        Route::get('/settings/branding/logo', [BrandingController::class, 'logo']);
+        Route::get('/settings/roles', [RoleController::class, 'index']);
+        Route::post('/settings/roles', [RoleController::class, 'store']);
+        Route::patch('/settings/roles/{role}', [RoleController::class, 'update']);
+        Route::delete('/settings/roles/{role}', [RoleController::class, 'destroy']);
+        Route::get('/settings/permissions', [RoleController::class, 'permissions']);
+        Route::get('/settings/users', [RoleController::class, 'users']);
+        Route::patch('/settings/users/{member}/roles', [RoleController::class, 'assign']);
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::patch('/modules/{key}', [ModuleController::class, 'update']);

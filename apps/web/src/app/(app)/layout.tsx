@@ -1,9 +1,11 @@
+import { BrandingApplier } from "@/components/layout/branding-applier";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh">
+      <BrandingApplier />
       <Sidebar />
       <div className="lg:pl-[264px]">
         <Topbar />
