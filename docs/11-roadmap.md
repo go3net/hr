@@ -46,16 +46,15 @@ Status of this repository against the full product scope. ✅ implemented here �
 |---|---|
 | Design system (tokens, dark/light/system, Inter) | ✅ |
 | App shell (sidebar, topbar, command palette) | ✅ |
-| Auth pages (login) | ✅ |
-| Executive dashboard | ✅ |
-| HR: employees list + detail | ✅ |
-| HR: leave + attendance pages | ✅ |
-| Remaining module UIs | ⬜ follow established patterns |
+| Auth pages (login, 2FA, OAuth) | ✅ |
+| Executive dashboard (live KPIs + live chart series) | ✅ |
+| All 16 module UIs | ✅ |
+| White-label runtime theming | ✅ |
 
 ## Mobile
 Flutter scaffold with architecture doc — feature build-out follows API stabilization.
 
 ## Suggested next sprints
-1. Real dashboard chart endpoints (attendance/revenue trends currently sample-labeled).
-2. FCM push notifications (mobile + web).
-3. Flutter mobile feature build-out against the stabilized API.
+1. FCM push notifications (mobile + web).
+2. Flutter mobile feature build-out against the stabilized API.
+3. Deploy: provision hosting, run docker-compose stack, connect Paystack/Anthropic/OAuth keys.

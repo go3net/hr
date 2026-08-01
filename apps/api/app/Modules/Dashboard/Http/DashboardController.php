@@ -45,6 +45,56 @@ class DashboardController extends ApiController
         return $this->respond($summary);
     }
 
+    /** Series for the executive charts: attendance trend + department headcount. */
+    public function charts(): JsonResponse
+    {
+        $tenantId = app(\App\Core\Tenancy\TenantContext::class)->id();
+
+        $charts = Cache::remember("t{$tenantId}:dashboard:charts", 300, function () {
+            $activeStaff = Employee::query()->where('status', 'active')->count();
+
+            // Last 10 working days (Mon–Fri), oldest first.
+            $days = collect();
+            $cursor = now()->startOfDay();
+            while ($days->count() < 10) {
+                if ($cursor->isWeekday()) {
+                    $days->prepend($cursor->copy());
+                }
+                $cursor->subDay();
+            }
+
+            $records = AttendanceRecord::query()
+                ->whereDate('work_date', '>=', $days->first()->toDateString())
+                ->get(['work_date', 'is_late'])
+                ->groupBy(fn (AttendanceRecord $r) => $r->work_date->toDateString());
+
+            $attendance = $days->map(function ($day) use ($records, $activeStaff) {
+                $present = $records->get($day->toDateString())?->count() ?? 0;
+
+                return [
+                    'day' => $day->format('D j'),
+                    'rate' => $activeStaff > 0 ? (int) round($present / $activeStaff * 100) : 0,
+                    'present' => $present,
+                ];
+            })->values();
+
+            $headcount = Department::query()
+                ->withCount(['employees' => fn ($q) => $q->where('status', 'active')])
+                ->orderByDesc('employees_count')
+                ->limit(8)
+                ->get()
+                ->map(fn (Department $d) => [
+                    'department' => $d->name,
+                    'count' => $d->employees_count,
+                ])
+                ->values();
+
+            return ['attendance' => $attendance, 'headcount' => $headcount, 'active_staff' => $activeStaff];
+        });
+
+        return $this->respond($charts);
+    }
+
     public function activity(): JsonResponse
     {
         $this->requirePermission('dashboard.activity.view');

@@ -20,6 +20,7 @@ import { AttendanceTrendChart, HeadcountChart } from "@/components/charts/dashbo
 import {
   useActivity,
   useBootstrap,
+  useDashboardCharts,
   useDashboardSummary,
   useDecideLeave,
   usePendingLeave,
@@ -74,6 +75,7 @@ const actionLabels: Record<string, string> = {
 export function DashboardClient() {
   const { data: session } = useBootstrap();
   const { data: summary, isPending: summaryLoading } = useDashboardSummary();
+  const { data: charts, isPending: chartsLoading } = useDashboardCharts();
   const { data: pending, isPending: pendingLoading } = usePendingLeave();
   const { data: activity, isPending: activityLoading } = useActivity();
   const decide = useDecideLeave();
@@ -163,24 +165,36 @@ export function DashboardClient() {
         ))}
       </div>
 
-      {/* Charts (sample series until analytics endpoints land) */}
+      {/* Charts — live series from /dashboard/charts */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Attendance rate</CardTitle>
-            <CardDescription>Sample series — weekly analytics endpoint is on the roadmap</CardDescription>
+            <CardDescription>Last 10 working days, share of active staff clocked in</CardDescription>
           </CardHeader>
           <CardContent>
-            <AttendanceTrendChart />
+            {chartsLoading || !charts ? (
+              <Skeleton className="h-[240px] w-full" />
+            ) : (
+              <AttendanceTrendChart data={charts.attendance} />
+            )}
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Headcount by department</CardTitle>
-            <CardDescription>Sample series — weekly analytics endpoint is on the roadmap</CardDescription>
+            <CardDescription>Active employees per department</CardDescription>
           </CardHeader>
           <CardContent>
-            <HeadcountChart />
+            {chartsLoading || !charts ? (
+              <Skeleton className="h-[240px] w-full" />
+            ) : charts.headcount.length === 0 ? (
+              <p className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
+                No departments yet.
+              </p>
+            ) : (
+              <HeadcountChart data={charts.headcount} />
+            )}
           </CardContent>
         </Card>
       </div>

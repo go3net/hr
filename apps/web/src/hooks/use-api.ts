@@ -1803,3 +1803,19 @@ export function useAssignRoles() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", "members"] }),
   });
 }
+
+/* ── Dashboard charts ──────────────────────────────────────────── */
+
+export type DashboardCharts = {
+  attendance: { day: string; rate: number; present: number }[];
+  headcount: { department: string; count: number }[];
+  active_staff: number;
+};
+
+export function useDashboardCharts() {
+  return useQuery({
+    queryKey: ["dashboard", "charts"],
+    queryFn: () => get<DashboardCharts>("/dashboard/charts").then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+}

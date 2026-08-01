@@ -89,6 +89,7 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         // Dashboard module
         Route::prefix('dashboard')->middleware('module:dashboard')->group(function () {
             Route::get('/summary', [DashboardController::class, 'summary']);
+            Route::get('/charts', [DashboardController::class, 'charts']);
             Route::get('/activity', [DashboardController::class, 'activity']);
         });
 
