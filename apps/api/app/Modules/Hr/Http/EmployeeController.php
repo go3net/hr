@@ -85,10 +85,15 @@ class EmployeeController extends ApiController
     {
         $this->requirePermission('hr.employees.manage');
 
-        $user = app(\App\Modules\Hr\Services\InvitationService::class)
+        $result = app(\App\Modules\Hr\Services\InvitationService::class)
             ->invite($employee, $request->user());
 
-        return $this->respond(['invited' => true, 'email' => $user->email]);
+        return $this->respond([
+            'invited' => true,
+            'email' => $result['user']->email,
+            // Share this directly (WhatsApp/Slack) when SMTP isn't set up yet.
+            'setup_url' => $result['setup_url'],
+        ]);
     }
 
     public function show(Request $request, Employee $employee): JsonResponse
