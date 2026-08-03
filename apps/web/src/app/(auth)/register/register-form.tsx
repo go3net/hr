@@ -27,13 +27,19 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-/** "Go3net Technologies" → "go3net-technologies" */
-function slugify(value: string): string {
-  return value
+/**
+ * "Go3net Technologies" → "go3net-technologies".
+ * While typing we keep a trailing dash — stripping it would swallow the
+ * space the moment it's pressed and make the key feel broken.
+ */
+function slugify(value: string, { final = false } = {}): string {
+  const slug = value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+    .replace(/^-+/, "")
     .slice(0, 40);
+
+  return final ? slug.replace(/-+$/, "") : slug;
 }
 
 export function RegisterForm() {
@@ -56,11 +62,13 @@ export function RegisterForm() {
 
   const onSubmit = async (values: FormValues) => {
     setServerError(null);
+    // Tidy any trailing dash left over from typing before sending.
+    const payload = { ...values, subdomain: slugify(values.subdomain, { final: true }) };
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => null);
 
@@ -114,23 +122,35 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="subdomain">Workspace address</Label>
-        <Input
-          id="subdomain"
-          placeholder="go3net"
-          autoCapitalize="off"
-          spellCheck={false}
-          {...register("subdomain", {
-            onChange: (e) => {
-              setSubdomainTouched(true);
-              const slug = slugify(e.target.value);
-              setValue("subdomain", slug);
-              setSubdomain(slug);
-            },
-          })}
-        />
+        <Label htmlFor="subdomain">Workspace link</Label>
+        <div className="flex h-9 items-center rounded-[10px] border border-border bg-surface shadow-card focus-within:border-primary focus-within:ring-2 focus-within:ring-ring">
+          <input
+            id="subdomain"
+            placeholder="go3net"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="h-full min-w-0 flex-1 rounded-l-[10px] bg-transparent px-3 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+            {...register("subdomain", {
+              onChange: (e) => {
+                setSubdomainTouched(true);
+                const slug = slugify(e.target.value);
+                setValue("subdomain", slug);
+                setSubdomain(slug);
+              },
+            })}
+          />
+          <span className="shrink-0 border-l border-border px-3 text-[13px] text-muted-foreground">
+            .go3net.app
+          </span>
+        </div>
         <p className="text-[12px] text-muted-foreground">
-          {subdomain ? `${subdomain}.go3net.app` : "yourcompany.go3net.app"}
+          Your team will sign in at{" "}
+          <span className="font-medium text-foreground">
+            {subdomain || "yourcompany"}.go3net.app
+          </span>{" "}
+          — letters, numbers and dashes only (spaces become dashes). This isn&apos;t your office
+          address; you can add that later in Settings.
         </p>
         <FieldError message={errors.subdomain?.message} />
       </div>
