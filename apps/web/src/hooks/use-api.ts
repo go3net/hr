@@ -1825,7 +1825,9 @@ export function useInviteEmployee() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (publicId: string) =>
-      post<{ invited: boolean; email: string }>(`/hr/employees/${publicId}/invite`).then((r) => r.data),
+      post<{ invited: boolean; email: string; setup_url: string }>(
+        `/hr/employees/${publicId}/invite`,
+      ).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
   });
 }

@@ -169,7 +169,8 @@ function AddEmployeeDialog() {
 
 function AccountCell({ employee }: { employee: EmployeeRow }) {
   const invite = useInviteEmployee();
-  const [sent, setSent] = useState(false);
+  const [setupUrl, setSetupUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   if (employee.account_status === "active") {
     return <Badge variant="success">Active</Badge>;
@@ -183,12 +184,39 @@ function AccountCell({ employee }: { employee: EmployeeRow }) {
           variant="ghost"
           size="sm"
           className="h-6 px-2 text-[11px]"
-          onClick={() => invite.mutate(employee.id, { onSuccess: () => setSent(true) })}
-          disabled={invite.isPending || sent}
+          onClick={() => invite.mutate(employee.id, { onSuccess: (res) => setSetupUrl(res.setup_url) })}
+          disabled={invite.isPending}
         >
           {invite.isPending ? <Loader2 className="size-3 animate-spin" /> : <Send className="size-3" />}
-          {sent ? "Sent" : employee.account_status === "invited" ? "Resend" : "Invite"}
+          {employee.account_status === "invited" ? "Resend" : "Invite"}
         </Button>
+      ) : null}
+
+      {setupUrl ? (
+        <Dialog open onOpenChange={(open) => { if (!open) { setSetupUrl(null); setCopied(false); } }}>
+          <DialogContent
+            title={`Invite ${employee.name}`}
+            description="The invitation email has been queued — you can also share this setup link directly (WhatsApp, chat). It's single-use and valid for 7 days."
+          >
+            <div className="space-y-3">
+              <div className="break-all rounded-[10px] border border-border bg-muted/40 p-3 font-mono text-[12px] text-foreground">
+                {setupUrl}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(setupUrl);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                >
+                  {copied ? "Copied!" : "Copy link"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </div>
   );

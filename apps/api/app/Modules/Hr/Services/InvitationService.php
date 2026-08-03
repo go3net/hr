@@ -16,9 +16,12 @@ class InvitationService
 {
     /**
      * Create (or reuse) the employee's user account and email a fresh
-     * single-use setup link. Returns the invited user.
+     * single-use setup link. Returns the invited user and the setup URL so
+     * admins can also share the link directly (e.g. before SMTP is set up).
+     *
+     * @return array{user: User, setup_url: string}
      */
-    public function invite(Employee $employee, User $invitedBy): User
+    public function invite(Employee $employee, User $invitedBy): array
     {
         if (! $employee->email) {
             throw ValidationException::withMessages(['email' => 'Add an email address to this employee first.']);
@@ -79,7 +82,11 @@ class InvitationService
 
         AuditLog::record('employee.invited', $employee, ['email' => $employee->email]);
 
-        return $user;
+        return [
+            'user' => $user,
+            'setup_url' => rtrim(config('app.frontend_url', config('app.url')), '/')
+                .'/accept-invite?token='.$token,
+        ];
     }
 
     /** Accept an invite: set the password, activate, return the user. */
