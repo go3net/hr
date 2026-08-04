@@ -525,6 +525,14 @@ export function useCreateTask() {
   });
 }
 
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/tasks/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+  });
+}
+
 /** Kanban move / edit with optimistic column update. */
 export function useUpdateTask(listKey: { projectId?: number; mine?: boolean }) {
   const queryClient = useQueryClient();
