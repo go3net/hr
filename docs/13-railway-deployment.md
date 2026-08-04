@@ -112,16 +112,45 @@ NEXT_PUBLIC_REVERB_SCHEME=https
 > requires a redeploy of `web`, which Railway does automatically when you
 > save variables.
 
+## 3b. Auto-deploy on merge
+
+A service needs two separate things to redeploy on a push, and it is easy
+to have only the first:
+
+1. **A source** — the repo recorded on the service. Set at creation.
+2. **A branch trigger** — the GitHub webhook that fires the build.
+
+Services created through the Railway **API** get a source but *no*
+trigger, so they never auto-deploy even though the dashboard shows the
+repo connected and offers no "Connect repo" prompt. Verify with:
+
+```graphql
+query { deploymentTriggers(projectId: "…", environmentId: "…", serviceId: "…")
+        { edges { node { repository branch } } } }
+```
+
+An empty result means no trigger. Fix it in the dashboard: **service →
+Settings → Source → disconnect**, then reconnect the repo and pick the
+branch. Reconnecting is what registers the webhook. Root directory and
+start command survive the reconnect. Deployment triggers cannot be
+created with a project token (`Bad Access`) — this step needs the
+dashboard or an account token.
+
 ## 4. First boot
 
-Once `api` deploys green, open its service → **Settings → Deploy →
-Custom Start Command** is not needed; instead run one-offs from your
-machine with the Railway CLI (`railway link` to the project first):
+Migrations run automatically: the Nixpacks PHP provider executes
+`php artisan migrate --force` on each deploy. **Seeders do not run.**
+That matters for the permission catalogue — a sprint that adds a
+permission must ship it as a migration (see
+`database/migrations/*_sync_role_permissions.php`, which re-runs the
+idempotent `RolePermissionSeeder`), otherwise the permission exists in
+code but not in the database and every role check against it fails.
+
+The module registry still needs seeding once, from your machine with the
+Railway CLI (`railway link` to the project first):
 
 ```bash
-railway run --service api php artisan migrate --force
 railway run --service api php artisan db:seed --class=ModuleSeeder --force
-railway run --service api php artisan db:seed --class=RolePermissionSeeder --force
 ```
 
 Then visit `https://<web-domain>/register`, create the first workspace —
