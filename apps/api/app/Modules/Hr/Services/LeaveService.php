@@ -78,14 +78,28 @@ class LeaveService
         return $request;
     }
 
-    /** Users in this tenant whose roles carry hr.leave.approve (not the requester). */
+    /**
+     * Who hears about a new request: the employee's own manager first (if
+     * they can approve), otherwise everyone holding hr.leave.approve. The
+     * manager is always included so a lead never misses their own team.
+     */
     private function approversFor(Employee $employee): \Illuminate\Support\Collection
     {
-        return User::query()
+        $approvers = User::query()
             ->where('tenant_id', $employee->tenant_id)
             ->where('id', '!=', $employee->user_id)
             ->whereHas('roles.permissions', fn ($q) => $q->where('key', 'hr.leave.approve'))
             ->get();
+
+        $managerUserId = $employee->manager?->user_id;
+        if ($managerUserId && ! $approvers->contains('id', $managerUserId)) {
+            $manager = User::query()->find($managerUserId);
+            if ($manager) {
+                $approvers->push($manager);
+            }
+        }
+
+        return $approvers;
     }
 
     public function approve(LeaveRequest $request, User $approver, ?string $note = null): LeaveRequest
