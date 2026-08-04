@@ -164,7 +164,7 @@ function NewEventDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-card focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-base text-foreground shadow-card sm:text-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           {error ? <p className="text-sm text-danger">{error}</p> : null}

@@ -74,7 +74,7 @@ function NewCourseDialog() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-card focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-base text-foreground shadow-card sm:text-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           {error ? <p className="text-sm text-danger">{error}</p> : null}
@@ -136,7 +136,7 @@ function AddLessonDialog({ courseId }: { courseId: number }) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={8}
-              className="w-full resize-y rounded-[10px] border border-border bg-surface px-3 py-2 font-mono text-[13px] text-foreground shadow-card focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full resize-y rounded-[10px] border border-border bg-surface px-3 py-2 font-mono text-base text-foreground shadow-card sm:text-[13px] focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           {error ? <p className="text-sm text-danger">{error}</p> : null}

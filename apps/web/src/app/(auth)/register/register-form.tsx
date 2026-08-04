@@ -130,7 +130,7 @@ export function RegisterForm() {
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
-            className="h-full min-w-0 flex-1 rounded-l-[10px] bg-transparent px-3 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+            className="h-full min-w-0 flex-1 rounded-l-[10px] bg-transparent px-3 text-base sm:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
             {...register("subdomain", {
               onChange: (e) => {
                 setSubdomainTouched(true);

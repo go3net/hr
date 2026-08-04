@@ -392,7 +392,7 @@ export function EmployeesClient() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, code, or email…"
-          className="h-9 w-full rounded-[10px] border border-border bg-surface pl-9 pr-3 text-sm shadow-card placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-10 w-full rounded-[10px] border border-border bg-surface pl-9 pr-3 text-base sm:h-9 sm:text-sm shadow-card placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
 

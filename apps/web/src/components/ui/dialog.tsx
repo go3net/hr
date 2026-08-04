@@ -61,7 +61,7 @@ export function Select({
   return (
     <select
       className={cn(
-        "h-9 w-full appearance-none rounded-[10px] border border-border bg-surface px-3 text-sm text-foreground shadow-card",
+        "h-10 w-full appearance-none rounded-[10px] border border-border bg-surface px-3 text-base text-foreground shadow-card sm:h-9 sm:text-sm",
         "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}

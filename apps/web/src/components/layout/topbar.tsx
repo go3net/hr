@@ -49,7 +49,7 @@ export function Topbar() {
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.75} />
         <input
           placeholder="Search anything…  ⌘K"
-          className="h-9 w-full rounded-[10px] border border-border bg-muted/60 pl-9 pr-3 text-sm placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
+          className="h-10 w-full rounded-[10px] border border-border bg-muted/60 pl-9 pr-3 text-base sm:h-9 sm:text-sm placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
 

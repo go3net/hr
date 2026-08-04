@@ -43,6 +43,10 @@ export function AcceptInviteForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (password.length < 10) {
+      setError("Your password needs at least 10 characters.");
+      return;
+    }
     if (password !== confirm) {
       setError("The passwords don't match.");
       return;
@@ -118,10 +122,17 @@ export function AcceptInviteForm() {
           />
         </div>
         {error ? <p className="text-sm text-danger">{error}</p> : null}
-        <Button type="submit" className="w-full" disabled={busy || password.length < 10 || confirm.length < 10}>
+
+        {/* The button stays enabled and explains itself: a greyed-out button
+            with no reason reads as a broken page, especially on a phone
+            where the placeholder disappears as soon as you start typing. */}
+        <Button type="submit" className="w-full" disabled={busy}>
           {busy ? <Loader2 className="size-4 animate-spin" /> : <LockKeyhole className="size-4" />}
           Activate my account
         </Button>
+        <p className="text-[13px] text-muted-foreground">
+          Your password needs at least 10 characters.
+        </p>
       </form>
     </div>
   );
