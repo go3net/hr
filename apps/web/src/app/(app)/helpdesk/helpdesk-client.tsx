@@ -97,7 +97,7 @@ function NewTicketDialog({ onCreated }: { onCreated: (id: number) => void }) {
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder="What happened, and what have you tried?"
-              className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-card focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full resize-none rounded-[10px] border border-border bg-surface px-3 py-2 text-base text-foreground shadow-card sm:text-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -263,7 +263,7 @@ function TicketDetail({ ticketId, isAgent }: { ticketId: number; isAgent: boolea
               rows={2}
               placeholder={internal ? "Internal note (hidden from the requester)…" : "Write a reply…"}
               className={cn(
-                "min-h-11 flex-1 resize-none rounded-[10px] border bg-surface px-3 py-2 text-sm text-foreground shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "min-h-11 flex-1 resize-none rounded-[10px] border bg-surface px-3 py-2 text-base text-foreground shadow-card sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 internal ? "border-warning/50" : "border-border focus-visible:border-primary",
               )}
             />
