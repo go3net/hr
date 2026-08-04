@@ -71,7 +71,7 @@ function NewOpeningDialog() {
             <Label htmlFor="o-title">Role title</Label>
             <Input id="o-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Senior Laravel Engineer" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="col-span-1 grid gap-2">
               <Label htmlFor="o-count">Slots</Label>
               <Input id="o-count" type="number" min={1} value={count} onChange={(e) => setCount(e.target.value)} />

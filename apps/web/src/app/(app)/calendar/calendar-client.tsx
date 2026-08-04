@@ -110,7 +110,7 @@ function NewEventDialog({
             <Label htmlFor="e-title">Title</Label>
             <Input id="e-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Sprint planning" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="grid gap-2">
               <Label htmlFor="e-date">Date</Label>
               <Input id="e-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -365,6 +365,10 @@ export function CalendarClient() {
           </Button>
         </div>
 
+        {/* Seven columns cannot shrink below readability — scroll the
+            grid inside its own container rather than the page. */}
+        <div className="overflow-x-auto">
+        <div className="min-w-[700px]">
         <div className="grid grid-cols-7 border-b border-border">
           {WEEKDAYS.map((day) => (
             <div key={day} className="px-2 py-2 text-center text-[12px] font-medium text-muted-foreground">
@@ -428,6 +432,8 @@ export function CalendarClient() {
             })}
           </div>
         )}
+        </div>
+        </div>
       </Card>
 
       <div className="flex flex-wrap gap-4">

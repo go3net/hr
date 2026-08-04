@@ -179,7 +179,7 @@ function TicketDetail({ ticketId, isAgent }: { ticketId: number; isAgent: boolea
         </div>
 
         {isAgent ? (
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Select
               aria-label="Status"
               value={ticket.status}
