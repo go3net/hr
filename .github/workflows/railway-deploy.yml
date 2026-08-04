@@ -1,0 +1,51 @@
+name: Railway Deploy
+
+# Railway's push-to-deploy webhook can only be created by an account-level
+# token linked to a GitHub identity. The project token this repo uses can
+# deploy but not create triggers, so the push-to-deploy wiring lives here
+# instead. Upside: deploys only fire after CI is green.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      services:
+        description: "Comma-separated subset to deploy, e.g. api,web (default: all)"
+        required: false
+        default: ""
+
+# One deploy at a time — Railway caps concurrent builds, and overlapping
+# runs would race on migrations.
+concurrency:
+  group: railway-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    # Never deploy a red build. workflow_dispatch has no source run to check.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve commit
+        id: commit
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_ENVIRONMENT_ID: ${{ vars.RAILWAY_ENVIRONMENT_ID }}
+          COMMIT_SHA: ${{ steps.commit.outputs.sha }}
+          ONLY: ${{ github.event.inputs.services }}
+        run: ./infrastructure/railway/deploy.sh
