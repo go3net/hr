@@ -212,7 +212,7 @@ export function AssetsClient() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[13px] text-muted-foreground">
                   <th className="p-3 font-medium">Asset</th>

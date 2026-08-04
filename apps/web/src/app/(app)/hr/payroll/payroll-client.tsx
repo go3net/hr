@@ -176,7 +176,7 @@ export function PayrollClient() {
           <CardDescription>Draft → approve → publish. Published runs unlock payslips and bank export.</CardDescription>
         </CardHeader>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] whitespace-nowrap text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/40 text-left text-[12px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
                 <th className="px-4 py-3">Period</th>
@@ -282,7 +282,7 @@ export function PayrollClient() {
             <CardDescription>Per-employee breakdown: gross → pension → PAYE → net</CardDescription>
           </CardHeader>
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-left text-[12px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
                   <th className="px-4 py-3">Employee</th>

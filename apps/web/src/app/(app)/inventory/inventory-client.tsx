@@ -68,7 +68,7 @@ function NewItemDialog() {
               <Input id="i-sku" value={form.sku} onChange={(e) => set("sku", e.target.value)} placeholder="e.g. LAP-001" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="grid gap-2">
               <Label htmlFor="i-cat">Category</Label>
               <Select id="i-cat" value={form.category} onChange={(e) => set("category", e.target.value)}>
@@ -250,7 +250,7 @@ export function InventoryClient() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[13px] text-muted-foreground">
                   <th className="p-3 font-medium">Item</th>

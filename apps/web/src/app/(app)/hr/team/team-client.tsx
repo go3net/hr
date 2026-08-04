@@ -66,7 +66,7 @@ export function TeamClient() {
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
         {[
           { label: "Team size", value: meta?.team_size },
           { label: "In today", value: meta?.present_today },
@@ -117,7 +117,7 @@ export function TeamClient() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[640px] whitespace-nowrap text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/40 text-left text-[12px] font-medium uppercase tracking-[0.05em] text-muted-foreground">
                   <th className="px-4 py-3">Team member</th>

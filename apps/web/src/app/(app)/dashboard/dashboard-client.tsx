@@ -45,7 +45,7 @@ function StatCard({
 }) {
   return (
     <Card className="transition-shadow duration-150 hover:shadow-pop">
-      <CardContent className="p-5">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <p className="text-[13px] text-muted-foreground">{name}</p>
           <Icon className="size-[18px] text-muted-foreground" strokeWidth={1.75} />
@@ -174,7 +174,7 @@ function CompanyDashboard() {
       </Card>
 
       {/* KPI grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
         {stats.map((stat) => (
           <StatCard key={stat.name} {...stat} loading={summaryLoading} />
         ))}

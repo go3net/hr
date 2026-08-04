@@ -24,7 +24,7 @@ function Tile({
 }) {
   return (
     <Card className="transition-shadow duration-150 hover:shadow-pop">
-      <CardContent className="p-5">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <p className="text-[13px] text-muted-foreground">{name}</p>
           <Icon className="size-[18px] text-muted-foreground" strokeWidth={1.75} />
@@ -80,7 +80,7 @@ export function MyDashboard() {
         <p className="mt-1 text-sm text-muted-foreground">Here&apos;s where you stand today.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Tile
           name="Today"
           value={me?.clocked_in ? "Clocked in" : "Not clocked in"}

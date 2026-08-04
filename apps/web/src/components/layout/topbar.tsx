@@ -7,6 +7,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Search, Sun, Moon, Monitor, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { useBootstrap } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function Topbar() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const { data: session } = useBootstrap();
+  const workspaceName = session?.tenant?.branding?.display_name ?? "Go3net Office";
   // Theme is only known client-side — render the switcher after hydration.
   const mounted = useSyncExternalStore(subscribeNoop, getTrue, getFalse);
 
@@ -34,7 +36,15 @@ export function Topbar() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-xl lg:px-6">
+    <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-border bg-surface/80 px-4 backdrop-blur-xl lg:gap-3 lg:px-6">
+      <MobileNav />
+
+      {/* The sidebar carries the workspace identity on desktop; on mobile it
+          is hidden, so the topbar shows it instead. */}
+      <span className="truncate text-[15px] font-semibold tracking-[-0.01em] lg:hidden">
+        {workspaceName}
+      </span>
+
       <div className="relative hidden max-w-md flex-1 md:block">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.75} />
         <input
@@ -87,6 +97,35 @@ export function Topbar() {
                 <p className="text-sm font-medium">{session?.user.name}</p>
                 <p className="text-[12px] text-muted-foreground">{session?.user.email}</p>
               </div>
+              {/* The inline theme switcher is hidden on small screens, so
+                  phones get the control here instead. */}
+              {mounted && (
+                <div className="px-2.5 py-1.5 sm:hidden">
+                  <p className="pb-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                    Theme
+                  </p>
+                  <div className="flex items-center gap-1" role="radiogroup" aria-label="Theme">
+                    {themes.map((t) => (
+                      <button
+                        key={t.key}
+                        role="radio"
+                        aria-checked={theme === t.key}
+                        aria-label={`${t.label} theme`}
+                        onClick={() => setTheme(t.key)}
+                        className={cn(
+                          "flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[8px] border text-[13px] transition-colors",
+                          theme === t.key
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-border text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        <t.icon className="size-4" strokeWidth={1.75} />
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <DropdownMenu.Separator className="my-1 h-px bg-border" />
               <DropdownMenu.Item
                 onSelect={signOut}
