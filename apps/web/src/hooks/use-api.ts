@@ -62,7 +62,14 @@ export type EmployeeRow = {
   hired_at: string | null;
 };
 
-export type DepartmentRow = { id: number; name: string; code: string | null; employees_count: number };
+export type DepartmentRow = {
+  id: number;
+  name: string;
+  code: string | null;
+  manager_id: number | null;
+  manager: string | null;
+  employees_count: number;
+};
 
 export type LeaveRow = {
   id: number;
@@ -137,6 +144,32 @@ export function useDepartments() {
     queryKey: ["departments"],
     queryFn: () => get<DepartmentRow[]>("/hr/departments").then((r) => r.data),
     staleTime: 5 * 60_000,
+  });
+}
+
+export function useSaveDepartment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id?: number; name: string; code?: string | null; manager_id?: number | null }) =>
+      (id
+        ? patch<DepartmentRow>(`/hr/departments/${id}`, payload)
+        : post<DepartmentRow>("/hr/departments", payload)
+      ).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useDeleteDepartment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/hr/departments/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 
