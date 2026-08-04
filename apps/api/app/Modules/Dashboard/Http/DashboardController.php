@@ -95,9 +95,10 @@ class DashboardController extends ApiController
                 ->whereYear('start_date', now()->year)
                 ->sum('days'),
             'profile_percent' => app(\App\Modules\Hr\Services\ProfileCompleteness::class)->for($employee)['percent'],
+            // Tasks are assigned through the task_assignees pivot, not a column.
             'open_tasks' => \App\Models\Task::query()
-                ->where('assignee_id', $request->user()->id)
-                ->whereNotIn('status', ['done', 'cancelled'])
+                ->whereHas('assignees', fn ($q) => $q->where('users.id', $request->user()->id))
+                ->where('status', '!=', 'done')
                 ->count(),
         ];
     }
