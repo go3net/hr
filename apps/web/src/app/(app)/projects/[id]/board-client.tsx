@@ -6,10 +6,15 @@ import { ArrowLeft, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input, Label } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { TaskCard } from "@/components/modules/tasks/task-card";
 import { TaskDialog } from "@/components/modules/tasks/task-dialog";
+import {
+  TaskFields,
+  draftToPayload,
+  emptyDraft,
+  type TaskDraft,
+} from "@/components/modules/tasks/task-fields";
 import { useCreateTask, useProject, useTasks, useUpdateTask, type TaskRow } from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -26,20 +31,17 @@ type Status = (typeof COLUMNS)[number]["key"];
 function NewTaskDialog({ projectId }: { projectId: number }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [dueDate, setDueDate] = useState("");
+  const [draft, setDraft] = useState<TaskDraft>(emptyDraft);
   const createTask = useCreateTask();
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     createTask.mutate(
-      { title, priority, project_id: projectId, due_date: dueDate || undefined },
+      { ...draftToPayload(draft, { withStatus: true }), project_id: projectId },
       {
         onSuccess: () => {
-          setTitle("");
-          setDueDate("");
+          setDraft(emptyDraft());
           setOpen(false);
         },
         onError: (err) => setError(err instanceof ApiError ? err.message : "Could not create task."),
@@ -54,33 +56,19 @@ function NewTaskDialog({ projectId }: { projectId: number }) {
           <Plus /> New task
         </Button>
       </DialogTrigger>
-      <DialogContent title="New task" description="It lands in “To do” — drag it across the board as work progresses.">
+      <DialogContent
+        title="New task"
+        description="Leave the assignee empty to keep it yourself."
+        className="max-h-[85dvh] overflow-y-auto"
+      >
         <form className="space-y-4" onSubmit={submit}>
           {error && (
             <div className="rounded-[10px] border border-danger/30 bg-[var(--danger-soft)] px-3 py-2.5 text-[13px] text-danger">
               {error}
             </div>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Design the landing page" required />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="priority">Priority</Label>
-              <Select id="priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="due_date">Due date</Label>
-              <Input id="due_date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-            </div>
-          </div>
-          <Button className="w-full" type="submit" disabled={createTask.isPending}>
+          <TaskFields draft={draft} onChange={setDraft} idPrefix="nt" showStatus />
+          <Button className="w-full" type="submit" disabled={createTask.isPending || !draft.title.trim()}>
             {createTask.isPending && <Loader2 className="animate-spin" />}
             Create task
           </Button>

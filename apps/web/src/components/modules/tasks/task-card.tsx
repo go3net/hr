@@ -4,7 +4,7 @@ import { MessageSquare, CalendarClock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import type { TaskRow } from "@/hooks/use-api";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 export const priorityVariant = {
   low: "neutral",
@@ -12,6 +12,15 @@ export const priorityVariant = {
   high: "warning",
   urgent: "danger",
 } as const;
+
+/** A due date that has passed on unfinished work should be visible at a
+ *  glance, not only once the task is opened. */
+function isOverdue(task: TaskRow): boolean {
+  if (!task.due_date || task.status === "done") return false;
+  const due = new Date(task.due_date);
+  due.setHours(23, 59, 59, 999);
+  return due.getTime() < Date.now();
+}
 
 export function TaskCard({
   task,
@@ -45,7 +54,12 @@ export function TaskCard({
             </span>
           )}
           {task.due_date && (
-            <span className="inline-flex items-center gap-1 text-[12px] tabular-nums text-muted-foreground">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[12px] tabular-nums",
+                isOverdue(task) ? "font-medium text-danger" : "text-muted-foreground",
+              )}
+            >
               <CalendarClock className="size-3.5" strokeWidth={1.75} />
               {formatDate(task.due_date)}
             </span>

@@ -6,36 +6,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input, Label } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { TaskDialog } from "@/components/modules/tasks/task-dialog";
+import {
+  TaskFields,
+  draftToPayload,
+  emptyDraft,
+  type TaskDraft,
+} from "@/components/modules/tasks/task-fields";
 import { priorityVariant } from "@/components/modules/tasks/task-card";
 import { useCreateTask, useTasks, useUpdateTask, type TaskRow } from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
 import { cn, formatDate } from "@/lib/utils";
 
-function NewPersonalTaskDialog() {
+function NewTaskDialog() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState("");
-  const [priority, setPriority] = useState("medium");
-  const [dueDate, setDueDate] = useState("");
+  const [draft, setDraft] = useState<TaskDraft>(emptyDraft);
   const createTask = useCreateTask();
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    createTask.mutate(
-      { title, priority, due_date: dueDate || undefined },
-      {
-        onSuccess: () => {
-          setTitle("");
-          setDueDate("");
-          setOpen(false);
-        },
-        onError: (err) => setError(err instanceof ApiError ? err.message : "Could not create task."),
+    createTask.mutate(draftToPayload(draft), {
+      onSuccess: () => {
+        setDraft(emptyDraft());
+        setOpen(false);
       },
-    );
+      onError: (err) => setError(err instanceof ApiError ? err.message : "Could not create task."),
+    });
   };
 
   return (
@@ -45,33 +44,19 @@ function NewPersonalTaskDialog() {
           <Plus /> New task
         </Button>
       </DialogTrigger>
-      <DialogContent title="New personal task" description="Assigned to you. Attach tasks to a project from its board instead.">
+      <DialogContent
+        title="New task"
+        description="Leave the assignee empty to keep it yourself. Attach it to a project from that project's board."
+        className="max-h-[85dvh] overflow-y-auto"
+      >
         <form className="space-y-4" onSubmit={submit}>
           {error && (
             <div className="rounded-[10px] border border-danger/30 bg-[var(--danger-soft)] px-3 py-2.5 text-[13px] text-danger">
               {error}
             </div>
           )}
-          <div className="space-y-1.5">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Prepare Q3 report" required />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="priority">Priority</Label>
-              <Select id="priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="due_date">Due date</Label>
-              <Input id="due_date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-            </div>
-          </div>
-          <Button className="w-full" type="submit" disabled={createTask.isPending}>
+          <TaskFields draft={draft} onChange={setDraft} idPrefix="pt" />
+          <Button className="w-full" type="submit" disabled={createTask.isPending || !draft.title.trim()}>
             {createTask.isPending && <Loader2 className="animate-spin" />}
             Create task
           </Button>
@@ -136,7 +121,7 @@ export function TasksClient() {
           <h1 className="text-2xl font-semibold tracking-[-0.02em]">My tasks</h1>
           {tasks && <Badge variant="primary">{open.length} open</Badge>}
         </div>
-        <NewPersonalTaskDialog />
+        <NewTaskDialog />
       </div>
 
       <Card>
