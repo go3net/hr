@@ -24,6 +24,7 @@ use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\LifecycleController;
 use App\Modules\Hr\Http\PayrollController;
 use App\Modules\Hr\Http\PerformanceController;
+use App\Modules\Hr\Http\PositionController;
 use App\Modules\Hr\Http\RecruitmentController;
 use App\Modules\Inventory\Http\InventoryController;
 use App\Modules\Knowledge\Http\KnowledgeController;
@@ -128,6 +129,7 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::delete('/employees/{employee:public_id}', [EmployeeController::class, 'destroy']);
 
             Route::apiResource('departments', DepartmentController::class)->except(['show']);
+            Route::apiResource('positions', PositionController::class)->except(['show']);
 
             Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn']);
             Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut']);

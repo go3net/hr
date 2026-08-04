@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Loader2, Send, UsersRound } from "lucide-react";
+import { Plus, Search, Loader2, Pencil, Send, UsersRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,15 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
-import { type EmployeeRow, useCreateEmployee, useDepartments, useEmployees, useInviteEmployee } from "@/hooks/use-api";
+import {
+  type EmployeeRow,
+  useCreateEmployee,
+  useDepartments,
+  useEmployees,
+  useInviteEmployee,
+  usePositions,
+  useUpdateEmployee,
+} from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -167,6 +175,130 @@ function AddEmployeeDialog() {
   );
 }
 
+function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDone: () => void }) {
+  const update = useUpdateEmployee();
+  const { data: departments } = useDepartments();
+  const { data: positions } = usePositions();
+  const [form, setForm] = useState({
+    first_name: employee.first_name,
+    last_name: employee.last_name,
+    email: employee.email ?? "",
+    phone: employee.phone ?? "",
+    department_id: employee.department_id ? String(employee.department_id) : "",
+    position_id: employee.position_id ? String(employee.position_id) : "",
+    employment_type: employee.employment_type,
+    status: employee.status,
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  const submit = () => {
+    setError(null);
+    update.mutate(
+      {
+        id: employee.id,
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        email: form.email.trim() || null,
+        phone: form.phone.trim() || null,
+        department_id: form.department_id ? Number(form.department_id) : null,
+        position_id: form.position_id ? Number(form.position_id) : null,
+        employment_type: form.employment_type,
+        status: form.status,
+      },
+      {
+        onSuccess: onDone,
+        onError: (err) =>
+          setError(err instanceof ApiError ? err.message : "Could not save the changes."),
+      },
+    );
+  };
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onDone()}>
+      <DialogContent title={`Edit ${employee.name}`} description={`Employee ${employee.employee_code}`}>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="e-first">First name</Label>
+              <Input id="e-first" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="e-last">Last name</Label>
+              <Input id="e-last" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="e-email">Work email</Label>
+              <Input id="e-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="e-phone">Phone</Label>
+              <Input id="e-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="e-dept">Department</Label>
+              <Select id="e-dept" value={form.department_id} onChange={(e) => set("department_id", e.target.value)}>
+                <option value="">No department</option>
+                {(departments ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="e-position">Position</Label>
+              <Select id="e-position" value={form.position_id} onChange={(e) => set("position_id", e.target.value)}>
+                <option value="">No position</option>
+                {(positions ?? []).map((p) => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="e-type">Employment type</Label>
+              <Select id="e-type" value={form.employment_type} onChange={(e) => set("employment_type", e.target.value)}>
+                <option value="full_time">Full-time</option>
+                <option value="contract">Contract</option>
+                <option value="nysc">NYSC</option>
+                <option value="intern">Intern</option>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="e-status">Status</Label>
+              <Select id="e-status" value={form.status} onChange={(e) => set("status", e.target.value)}>
+                <option value="active">Active</option>
+                <option value="on_leave">On leave</option>
+                <option value="suspended">Suspended</option>
+                <option value="exited">Exited</option>
+              </Select>
+            </div>
+          </div>
+
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
+          <div className="flex justify-end">
+            <Button
+              onClick={submit}
+              disabled={update.isPending || !form.first_name.trim() || !form.last_name.trim()}
+            >
+              {update.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Save changes
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AccountCell({ employee }: { employee: EmployeeRow }) {
   const invite = useInviteEmployee();
   const [setupUrl, setSetupUrl] = useState<string | null>(null);
@@ -224,6 +356,7 @@ function AccountCell({ employee }: { employee: EmployeeRow }) {
 
 export function EmployeesClient() {
   const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<EmployeeRow | null>(null);
   const { data: employees, isPending, isError } = useEmployees(search);
 
   return (
@@ -259,13 +392,14 @@ export function EmployeesClient() {
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Account</th>
                 <th className="px-4 py-3">Hired</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {isPending &&
                 [1, 2, 3, 4, 5].map((i) => (
                   <tr key={i} className="border-b border-border/60 last:border-0">
-                    <td className="px-4 py-3" colSpan={8}>
+                    <td className="px-4 py-3" colSpan={9}>
                       <Skeleton className="h-8 w-full" />
                     </td>
                   </tr>
@@ -294,11 +428,21 @@ export function EmployeesClient() {
                   <td className="px-4 py-2.5 tabular-nums text-muted-foreground">
                     {e.hired_at ? formatDate(e.hired_at) : "—"}
                   </td>
+                  <td className="px-4 py-2.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Edit ${e.name}`}
+                      onClick={() => setEditing(e)}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
               {!isPending && !isError && employees?.length === 0 && (
                 <tr>
-                  <td colSpan={8}>
+                  <td colSpan={9}>
                     <div className="flex flex-col items-center gap-3 py-16 text-center">
                       <span className="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15">
                         <UsersRound className="size-5 text-primary" strokeWidth={1.75} />
@@ -317,7 +461,7 @@ export function EmployeesClient() {
               )}
               {isError && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-[13px] text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-10 text-center text-[13px] text-muted-foreground">
                     Could not load employees — check that the API is running, then refresh.
                   </td>
                 </tr>
@@ -326,6 +470,8 @@ export function EmployeesClient() {
           </table>
         </div>
       </Card>
+
+      {editing ? <EditEmployeeDialog employee={editing} onDone={() => setEditing(null)} /> : null}
     </div>
   );
 }
