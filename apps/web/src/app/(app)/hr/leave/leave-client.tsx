@@ -13,12 +13,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input, Label, FieldError } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
 import {
+  useBootstrap,
   useDecideLeave,
   useLeaveBalances,
   useLeaveRequests,
   useLeaveTypes,
   useSubmitLeave,
 } from "@/hooks/use-api";
+import { LeaveTypesDialog } from "./leave-types-dialog";
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -134,6 +136,9 @@ function RequestLeaveDialog() {
 }
 
 export function LeaveClient() {
+  const { data: session } = useBootstrap();
+  const permissions = session?.permissions ?? [];
+  const canManageTypes = permissions.includes("*") || permissions.includes("hr.leave.manage");
   const { data: balances, isPending: balancesLoading } = useLeaveBalances();
   const { data: requests, isPending: requestsLoading } = useLeaveRequests();
   const decide = useDecideLeave();
@@ -142,7 +147,10 @@ export function LeaveClient() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-[-0.02em]">Leave</h1>
-        <RequestLeaveDialog />
+        <div className="flex flex-wrap gap-2">
+          {canManageTypes ? <LeaveTypesDialog /> : null}
+          <RequestLeaveDialog />
+        </div>
       </div>
 
       {/* My balances */}
