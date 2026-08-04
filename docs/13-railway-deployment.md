@@ -129,12 +129,33 @@ query { deploymentTriggers(projectId: "…", environmentId: "…", serviceId: "�
         { edges { node { repository branch } } } }
 ```
 
-An empty result means no trigger. Fix it in the dashboard: **service →
-Settings → Source → disconnect**, then reconnect the repo and pick the
-branch. Reconnecting is what registers the webhook. Root directory and
-start command survive the reconnect. Deployment triggers cannot be
-created with a project token (`Bad Access`) — this step needs the
-dashboard or an account token.
+An empty result means no trigger. Creating one needs an account-level
+token linked to a GitHub identity — with a project token both
+`deploymentTriggerCreate` (`Bad Access`) and `serviceConnect`
+(`Not Authorized`) are refused, even for a service that already has a
+working trigger.
+
+Rather than depend on that, this repo deploys itself from CI:
+`.github/workflows/railway-deploy.yml` runs after the **CI** workflow
+succeeds on `main` and calls `infrastructure/railway/deploy.sh`, which
+deploys each service in `infrastructure/railway/services.json` in order
+and polls until each one is green. `api` goes first because it carries
+the migrations; if it fails the rest are skipped rather than booted
+against a schema that does not match their code.
+
+Setup is one GitHub secret:
+
+| Kind | Name | Value |
+|---|---|---|
+| Secret | `RAILWAY_TOKEN` | a Railway **project token** for this project |
+| Variable (optional) | `RAILWAY_ENVIRONMENT_ID` | overrides the environment in `services.json` |
+
+Deploy a subset by hand from the **Actions** tab → *Railway Deploy* →
+*Run workflow* → e.g. `api,web`. Or locally:
+
+```bash
+RAILWAY_TOKEN=... ONLY=web ./infrastructure/railway/deploy.sh
+```
 
 ## 4. First boot
 

@@ -1,0 +1,12 @@
+{
+  "_comment": "Railway service IDs for the production environment. Deploy order matters: api runs the migrations the other services' code depends on, so it goes first and the rest only follow once it is green.",
+  "environmentId": "1c146963-5dce-4464-a0bb-c885805a3dcd",
+  "projectId": "6f0d29e8-5a87-40a7-85f5-b674e859e91e",
+  "services": [
+    { "name": "api", "id": "05733a63-35e0-4078-9bf8-bb5c2bde8194", "rootDirectory": "apps/api" },
+    { "name": "worker", "id": "62bf92b4-2ed7-4b5e-9dc1-5680d1bf12e7", "rootDirectory": "apps/api" },
+    { "name": "scheduler", "id": "185538c9-c67f-40ff-b1fa-723b8281a53c", "rootDirectory": "apps/api" },
+    { "name": "reverb", "id": "5b28d4d1-5f91-4c68-9514-44877540bb86", "rootDirectory": "apps/api" },
+    { "name": "web", "id": "bc748c61-ddd1-4190-aec0-8bc1f05fc1d4", "rootDirectory": "apps/web" }
+  ]
+}
