@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AttendanceRecord;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\InteractsWithTenancy;
@@ -54,11 +55,35 @@ class EmployeeAccessScopeTest extends TestCase
             'is_late' => false,
         ]);
 
+        // Real rows behind every counter, so the queries are exercised with
+        // data rather than merely returning zero.
+        $mine = Task::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'title' => 'Mine, open',
+            'status' => 'in_progress',
+        ]);
+        $mine->assignees()->attach($staff->id);
+
+        $done = Task::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'title' => 'Mine, finished',
+            'status' => 'done',
+        ]);
+        $done->assignees()->attach($staff->id);
+
+        $someoneElses = Task::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'title' => 'Not mine',
+            'status' => 'todo',
+        ]);
+        $someoneElses->assignees()->attach($colleagueUser->id);
+
         $response = $this->actingAs($staff)->getJson('/api/v1/dashboard/summary')->assertOk();
 
         $response->assertJsonPath('meta.scope', 'personal');
         $response->assertJsonPath('data.has_employee_record', true);
         $response->assertJsonPath('data.clocked_in', true);
+        $response->assertJsonPath('data.open_tasks', 1);
 
         // The company aggregates must be absent entirely, not merely zeroed.
         $data = $response->json('data');
