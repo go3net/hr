@@ -54,9 +54,14 @@ export type EmployeeRow = {
   employee_code: string;
   account_status: "invited" | "active" | "disabled" | null;
   name: string;
+  first_name: string;
+  last_name: string;
   email: string | null;
+  phone: string | null;
   department: string | null;
+  department_id: number | null;
   position: string | null;
+  position_id: number | null;
   employment_type: string;
   status: string;
   hired_at: string | null;
@@ -144,6 +149,56 @@ export function useDepartments() {
     queryKey: ["departments"],
     queryFn: () => get<DepartmentRow[]>("/hr/departments").then((r) => r.data),
     staleTime: 5 * 60_000,
+  });
+}
+
+export type PositionRow = {
+  id: number;
+  title: string;
+  level: string | null;
+  department_id: number | null;
+  department: string | null;
+  employees_count: number;
+};
+
+export function usePositions() {
+  return useQuery({
+    queryKey: ["positions"],
+    queryFn: () => get<PositionRow[]>("/hr/positions").then((r) => r.data),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useSavePosition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id?: number; title: string; level?: string | null; department_id?: number | null }) =>
+      (id
+        ? patch<PositionRow>(`/hr/positions/${id}`, payload)
+        : post<PositionRow>("/hr/positions", payload)
+      ).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions"] }),
+  });
+}
+
+export function useDeletePosition() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/hr/positions/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["positions"] }),
+  });
+}
+
+export function useUpdateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: string } & Record<string, unknown>) =>
+      patch<EmployeeRow>(`/hr/employees/${id}`, payload).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      queryClient.invalidateQueries({ queryKey: ["departments"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 

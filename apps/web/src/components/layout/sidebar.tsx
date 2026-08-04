@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
+  IdCard,
   Clock,
   CalendarDays,
   Banknote,
@@ -40,6 +41,7 @@ const nav = [
     items: [
       { href: "/hr/employees", icon: Users, name: "Employees" },
       { href: "/hr/departments", icon: Building2, name: "Departments" },
+      { href: "/hr/positions", icon: IdCard, name: "Positions" },
       { href: "/hr/attendance", icon: Clock, name: "Attendance" },
       { href: "/hr/leave", icon: CalendarDays, name: "Leave" },
       { href: "/hr/payroll", icon: Banknote, name: "Payroll" },

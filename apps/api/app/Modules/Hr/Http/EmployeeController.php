@@ -152,9 +152,14 @@ class EmployeeController extends ApiController
             'employee_code' => $e->employee_code,
             'account_status' => $e->user?->status, // null | invited | active | disabled
             'name' => $e->full_name,
+            'first_name' => $e->first_name,
+            'last_name' => $e->last_name,
             'email' => $e->email,
+            'phone' => $e->phone,
             'department' => $e->department?->name,
+            'department_id' => $e->department_id,
             'position' => $e->position?->title,
+            'position_id' => $e->position_id,
             'employment_type' => $e->employment_type,
             'status' => $e->status,
             'hired_at' => $e->hired_at?->toDateString(),
@@ -164,7 +169,6 @@ class EmployeeController extends ApiController
     private function present(Employee $e, bool $withSensitive = false): array
     {
         $base = $this->presentSummary($e) + [
-            'phone' => $e->phone,
             'date_of_birth' => $e->date_of_birth?->toDateString(),
             'gender' => $e->gender,
             'address' => $e->address,
