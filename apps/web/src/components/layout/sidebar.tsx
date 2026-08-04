@@ -33,6 +33,38 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// A disabled module hides its pages for everyone, admins included.
+const MODULE_OF: Record<string, string> = {
+  "/dashboard": "dashboard",
+  "/profile": "hr",
+  "/hr/team": "hr",
+  "/hr/employees": "hr",
+  "/hr/departments": "hr",
+  "/hr/positions": "hr",
+  "/hr/attendance": "hr",
+  "/hr/leave": "hr",
+  "/hr/payroll": "hr",
+  "/hr/recruitment": "hr",
+  "/hr/performance": "hr",
+  "/hr/onboarding": "hr",
+  "/hr/assets": "hr",
+  "/projects": "projects",
+  "/tasks": "tasks",
+  "/crm": "crm",
+  "/finance": "finance",
+  "/inventory": "inventory",
+  "/lms": "lms",
+  "/documents": "documents",
+  "/chat": "chat",
+  "/knowledge": "knowledge",
+  "/helpdesk": "helpdesk",
+  "/calendar": "calendar",
+  "/assistant": "ai",
+};
+
+// `permission` gates the link: omit it for pages every member may open
+// (their own profile, leave, payslips, chat). The API enforces the same
+// rules — this only keeps people from being shown doors they cannot open.
 const nav = [
   {
     label: "Overview",
@@ -42,27 +74,27 @@ const nav = [
     label: "People",
     items: [
       { href: "/profile", icon: UserRound, name: "My profile" },
-      { href: "/hr/team", icon: Users2, name: "My team" },
-      { href: "/hr/employees", icon: Users, name: "Employees" },
-      { href: "/hr/departments", icon: Building2, name: "Departments" },
-      { href: "/hr/positions", icon: IdCard, name: "Positions" },
+      { href: "/hr/team", icon: Users2, name: "My team", permission: "hr.team.view" },
+      { href: "/hr/employees", icon: Users, name: "Employees", permission: "hr.employees.view" },
+      { href: "/hr/departments", icon: Building2, name: "Departments", permission: "hr.departments.view" },
+      { href: "/hr/positions", icon: IdCard, name: "Positions", permission: "hr.departments.manage" },
       { href: "/hr/attendance", icon: Clock, name: "Attendance" },
       { href: "/hr/leave", icon: CalendarDays, name: "Leave" },
       { href: "/hr/payroll", icon: Banknote, name: "Payroll" },
-      { href: "/hr/recruitment", icon: BriefcaseBusiness, name: "Recruitment" },
+      { href: "/hr/recruitment", icon: BriefcaseBusiness, name: "Recruitment", permission: "hr.recruitment.manage" },
       { href: "/hr/performance", icon: Target, name: "Performance" },
-      { href: "/hr/onboarding", icon: ClipboardList, name: "Onboarding" },
-      { href: "/hr/assets", icon: Laptop, name: "Assets" },
+      { href: "/hr/onboarding", icon: ClipboardList, name: "Onboarding", permission: "hr.employees.manage" },
+      { href: "/hr/assets", icon: Laptop, name: "Assets", permission: "hr.assets.manage" },
     ],
   },
   {
     label: "Work",
     items: [
-      { href: "/projects", icon: FolderKanban, name: "Projects" },
+      { href: "/projects", icon: FolderKanban, name: "Projects", permission: "projects.view" },
       { href: "/tasks", icon: CheckSquare, name: "Tasks" },
-      { href: "/crm", icon: HeartHandshake, name: "CRM" },
-      { href: "/finance", icon: Wallet, name: "Finance" },
-      { href: "/inventory", icon: Boxes, name: "Inventory" },
+      { href: "/crm", icon: HeartHandshake, name: "CRM", permission: "crm.view" },
+      { href: "/finance", icon: Wallet, name: "Finance", permission: "finance.view" },
+      { href: "/inventory", icon: Boxes, name: "Inventory", permission: "inventory.view" },
     ],
   },
   {
@@ -85,6 +117,25 @@ export function Sidebar() {
   const branding = session?.tenant?.branding;
   const workspaceName = branding?.display_name ?? "Go3net Office";
 
+  const permissions = session?.permissions ?? [];
+  const enabledModules = new Set((session?.modules ?? []).filter((m) => m.enabled).map((m) => m.key));
+
+  // Until the session loads we render nothing rather than the full menu —
+  // flashing admin links at an employee is the bug this guards against.
+  const visible = session
+    ? nav
+        .map((group) => ({
+          ...group,
+          items: group.items.filter((item) => {
+            const moduleKey = MODULE_OF[item.href];
+            if (moduleKey && !enabledModules.has(moduleKey)) return false;
+            if (!item.permission) return true;
+            return permissions.includes("*") || permissions.includes(item.permission);
+          }),
+        }))
+        .filter((group) => group.items.length > 0)
+    : [];
+
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-border bg-surface lg:flex">
       <div className="flex h-14 items-center gap-2.5 px-5">
@@ -104,7 +155,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4">
-        {nav.map((group) => (
+        {visible.map((group) => (
           <div key={group.label}>
             <p className="px-2 pb-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               {group.label}

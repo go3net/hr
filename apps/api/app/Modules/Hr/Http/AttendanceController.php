@@ -47,11 +47,17 @@ class AttendanceController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
-        $this->requirePermission('hr.attendance.view');
+        // Staff can always see their own record; only viewing other people's
+        // attendance needs the permission.
+        $canViewAll = \Illuminate\Support\Facades\Gate::allows('permission', 'hr.attendance.view');
+        $ownEmployeeId = $request->user()->employee?->id;
+
+        abort_if(! $canViewAll && ! $ownEmployeeId, 403, 'This action is unauthorized.');
 
         $records = AttendanceRecord::query()
             ->with(['employee:id,first_name,last_name,employee_code', 'office:id,name'])
-            ->when($request->query('employee_id'), fn ($q, $id) => $q->where('employee_id', $id))
+            ->when(! $canViewAll, fn ($q) => $q->where('employee_id', $ownEmployeeId))
+            ->when($canViewAll && $request->query('employee_id'), fn ($q) => $q->where('employee_id', $request->query('employee_id')))
             ->when($request->query('from'), fn ($q, $from) => $q->whereDate('work_date', '>=', $from))
             ->when($request->query('to'), fn ($q, $to) => $q->whereDate('work_date', '<=', $to))
             ->when($request->boolean('late'), fn ($q) => $q->where('is_late', true))
@@ -65,12 +71,17 @@ class AttendanceController extends ApiController
         );
     }
 
-    public function today(): JsonResponse
+    public function today(Request $request): JsonResponse
     {
-        $this->requirePermission('hr.attendance.view');
+        // Same rule as index(): your own row is yours; the whole floor is not.
+        $canViewAll = \Illuminate\Support\Facades\Gate::allows('permission', 'hr.attendance.view');
+        $ownEmployeeId = $request->user()->employee?->id;
+
+        abort_if(! $canViewAll && ! $ownEmployeeId, 403, 'This action is unauthorized.');
 
         $records = AttendanceRecord::query()
             ->with(['employee:id,first_name,last_name', 'office:id,name'])
+            ->when(! $canViewAll, fn ($q) => $q->where('employee_id', $ownEmployeeId))
             ->whereDate('work_date', now()->toDateString())
             ->orderBy('clocked_in_at')
             ->get();
@@ -81,7 +92,7 @@ class AttendanceController extends ApiController
                 'late' => $records->where('is_late', true)->count(),
             ],
             'records' => $records->map(fn (AttendanceRecord $r) => $this->present($r)),
-        ]);
+        ], 200, ['scope' => $canViewAll ? 'company' : 'personal']);
     }
 
     private function present(AttendanceRecord $r): array

@@ -9,12 +9,27 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class DashboardController extends ApiController
 {
-    public function summary(): JsonResponse
+    /**
+     * Company-wide headcount, attendance and leave figures are management
+     * information. Staff without people-visibility get a dashboard about
+     * themselves instead of a 403 — the page still works, it is just theirs.
+     */
+    private function seesCompanyWide(): bool
     {
+        return \Illuminate\Support\Facades\Gate::allows('permission', 'hr.employees.view');
+    }
+
+    public function summary(Request $request): JsonResponse
+    {
+        if (! $this->seesCompanyWide()) {
+            return $this->respond($this->personalSummary($request), 200, ['scope' => 'personal']);
+        }
+
         $tenantId = app(\App\Core\Tenancy\TenantContext::class)->id();
 
         // Aggregates are cheap but hot — cache per tenant for one minute.
@@ -42,12 +57,64 @@ class DashboardController extends ApiController
             ];
         });
 
-        return $this->respond($summary);
+        return $this->respond($summary, 200, ['scope' => 'company']);
+    }
+
+    /** What the signed-in member sees when they cannot view company figures. */
+    private function personalSummary(Request $request): array
+    {
+        $employee = $request->user()->employee;
+
+        if (! $employee) {
+            return [
+                'has_employee_record' => false,
+                'clocked_in' => false,
+                'clocked_in_at' => null,
+                'leave_pending' => 0,
+                'leave_taken_this_year' => 0,
+                'profile_percent' => 0,
+                'open_tasks' => 0,
+            ];
+        }
+
+        $today = AttendanceRecord::query()
+            ->where('employee_id', $employee->id)
+            ->whereDate('work_date', now()->toDateString())
+            ->first();
+
+        $leave = LeaveRequest::query()->where('employee_id', $employee->id);
+
+        return [
+            'has_employee_record' => true,
+            'clocked_in' => (bool) $today?->clocked_in_at && ! $today?->clocked_out_at,
+            'clocked_in_at' => $today?->clocked_in_at?->toIso8601String(),
+            'is_late_today' => (bool) $today?->is_late,
+            'leave_pending' => (clone $leave)->where('status', 'pending')->count(),
+            'leave_taken_this_year' => (clone $leave)
+                ->where('status', 'approved')
+                ->whereYear('start_date', now()->year)
+                ->sum('days'),
+            'profile_percent' => app(\App\Modules\Hr\Services\ProfileCompleteness::class)->for($employee)['percent'],
+            'open_tasks' => \App\Models\Task::query()
+                ->where('assignee_id', $request->user()->id)
+                ->whereNotIn('status', ['done', 'cancelled'])
+                ->count(),
+        ];
     }
 
     /** Series for the executive charts: attendance trend + department headcount. */
     public function charts(): JsonResponse
     {
+        // Headcount by department and company attendance rates are the same
+        // management information as the summary above.
+        if (! $this->seesCompanyWide()) {
+            return $this->respond(
+                ['attendance' => [], 'headcount' => [], 'active_staff' => 0],
+                200,
+                ['scope' => 'personal'],
+            );
+        }
+
         $tenantId = app(\App\Core\Tenancy\TenantContext::class)->id();
 
         $charts = Cache::remember("t{$tenantId}:dashboard:charts", 300, function () {
@@ -92,7 +159,7 @@ class DashboardController extends ApiController
             return ['attendance' => $attendance, 'headcount' => $headcount, 'active_staff' => $activeStaff];
         });
 
-        return $this->respond($charts);
+        return $this->respond($charts, 200, ['scope' => 'company']);
     }
 
     public function activity(): JsonResponse
