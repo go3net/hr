@@ -14,13 +14,21 @@ import { Input, Label, FieldError } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
 import {
   type EmployeeRow,
+  useBootstrap,
   useCreateEmployee,
   useDepartments,
+  useEmployeeDetail,
   useEmployees,
   useInviteEmployee,
   usePositions,
   useUpdateEmployee,
 } from "@/hooks/use-api";
+import {
+  SalarySection,
+  fromAllowanceRows,
+  toAllowanceRows,
+  type AllowanceRow,
+} from "./salary-section";
 import { ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -180,6 +188,23 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
   const { data: departments } = useDepartments();
   const { data: positions } = usePositions();
   const { data: colleagues } = useEmployees("");
+  const { data: session } = useBootstrap();
+  const { data: detail } = useEmployeeDetail(employee.id);
+
+  // Salary is a sensitive field — only show it to people cleared for it.
+  const permissions = session?.permissions ?? [];
+  const canSeePay = permissions.includes("*") || permissions.includes("hr.employees.view_sensitive");
+
+  const [baseSalary, setBaseSalary] = useState("");
+  const [allowances, setAllowances] = useState<AllowanceRow[]>([]);
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+
+  // Seed the pay fields once the record arrives, without an effect.
+  if (detail && loadedFor !== employee.id) {
+    setLoadedFor(employee.id);
+    setBaseSalary(detail.base_salary != null ? String(detail.base_salary) : "");
+    setAllowances(toAllowanceRows(detail.allowances));
+  }
   const [form, setForm] = useState({
     first_name: employee.first_name,
     last_name: employee.last_name,
@@ -209,6 +234,12 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
         manager_id: form.manager_id ? Number(form.manager_id) : null,
         employment_type: form.employment_type,
         status: form.status,
+        ...(canSeePay
+          ? {
+              base_salary: baseSalary === "" ? null : Number(baseSalary),
+              allowances: fromAllowanceRows(allowances),
+            }
+          : {}),
       },
       {
         onSuccess: onDone,
@@ -299,6 +330,15 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
               </Select>
             </div>
           </div>
+
+          {canSeePay ? (
+            <SalarySection
+              baseSalary={baseSalary}
+              onBaseSalaryChange={setBaseSalary}
+              allowances={allowances}
+              onAllowancesChange={setAllowances}
+            />
+          ) : null}
 
           {error ? <p className="text-sm text-danger">{error}</p> : null}
           <div className="flex justify-end">

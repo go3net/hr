@@ -17,7 +17,75 @@ class LeaveController extends ApiController
 
     public function types(): JsonResponse
     {
-        return $this->respond(LeaveType::query()->orderBy('name')->get());
+        return $this->respond(
+            LeaveType::query()->withCount('requests')->orderBy('name')->get()
+                ->map(fn (LeaveType $t) => $this->presentType($t)),
+        );
+    }
+
+    public function storeType(Request $request): JsonResponse
+    {
+        $this->requirePermission('hr.leave.manage');
+
+        $data = $request->validate($this->typeRules());
+
+        $type = LeaveType::create($data + ['tenant_id' => app(\App\Core\Tenancy\TenantContext::class)->id()]);
+
+        return $this->respond($this->presentType($type->loadCount('requests')), 201);
+    }
+
+    public function updateType(Request $request, LeaveType $leaveType): JsonResponse
+    {
+        $this->requirePermission('hr.leave.manage');
+
+        $leaveType->update($request->validate($this->typeRules($leaveType->id)));
+
+        return $this->respond($this->presentType($leaveType->fresh()->loadCount('requests')));
+    }
+
+    public function destroyType(LeaveType $leaveType): JsonResponse
+    {
+        $this->requirePermission('hr.leave.manage');
+
+        // Deleting a type that people have already booked against would strand
+        // their history, so it is blocked rather than cascaded.
+        abort_if(
+            $leaveType->requests()->exists(),
+            422,
+            'Staff have already booked this leave type — rename it instead of deleting it.',
+        );
+
+        $leaveType->delete();
+
+        return $this->respond(['deleted' => true]);
+    }
+
+    /** @return array<string, array<int, mixed>> */
+    private function typeRules(?int $ignoreId = null): array
+    {
+        return [
+            'name' => [
+                'required', 'string', 'max:80',
+                \Illuminate\Validation\Rule::unique('leave_types', 'name')
+                    ->where('tenant_id', app(\App\Core\Tenancy\TenantContext::class)->id())
+                    ->ignore($ignoreId),
+            ],
+            'days_per_year' => ['required', 'integer', 'min:0', 'max:365'],
+            'requires_approval' => ['sometimes', 'boolean'],
+            'is_paid' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    private function presentType(LeaveType $t): array
+    {
+        return [
+            'id' => $t->id,
+            'name' => $t->name,
+            'days_per_year' => $t->days_per_year,
+            'requires_approval' => (bool) $t->requires_approval,
+            'is_paid' => (bool) $t->is_paid,
+            'in_use' => (int) ($t->requests_count ?? 0) > 0,
+        ];
     }
 
     public function index(Request $request): JsonResponse

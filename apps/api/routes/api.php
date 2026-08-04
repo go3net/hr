@@ -150,6 +150,9 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/attendance/today', [AttendanceController::class, 'today']);
 
             Route::get('/leave-types', [LeaveController::class, 'types']);
+            Route::post('/leave-types', [LeaveController::class, 'storeType']);
+            Route::patch('/leave-types/{leaveType}', [LeaveController::class, 'updateType']);
+            Route::delete('/leave-types/{leaveType}', [LeaveController::class, 'destroyType']);
             Route::get('/leave-requests', [LeaveController::class, 'index']);
             Route::post('/leave-requests', [LeaveController::class, 'store']);
             Route::post('/leave-requests/{leaveRequest}/approve', [LeaveController::class, 'approve']);

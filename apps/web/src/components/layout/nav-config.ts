@@ -27,6 +27,9 @@ import {
   LifeBuoy,
   Calendar,
   Sparkles,
+  ShieldCheck,
+  Palette,
+  CreditCard,
 } from "lucide-react";
 import { useBootstrap } from "@/hooks/use-api";
 
@@ -113,6 +116,29 @@ export const NAV: NavGroup[] = [
       { href: "/helpdesk", icon: LifeBuoy, name: "Help desk" },
       { href: "/calendar", icon: Calendar, name: "Calendar" },
       { href: "/assistant", icon: Sparkles, name: "AI assistant" },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      {
+        href: "/settings/roles",
+        icon: ShieldCheck,
+        name: "Roles & permissions",
+        permission: "settings.roles.manage",
+      },
+      {
+        href: "/settings/branding",
+        icon: Palette,
+        name: "Branding",
+        permission: "settings.branding.manage",
+      },
+      {
+        href: "/settings/billing",
+        icon: CreditCard,
+        name: "Billing & plan",
+        permission: "settings.billing.manage",
+      },
     ],
   },
 ];

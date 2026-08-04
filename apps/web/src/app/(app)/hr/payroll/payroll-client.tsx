@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, Loader2, Download, Banknote, CheckCircle2, Send, SlidersHorizontal, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Input, Label } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   useAdjustPayrollItem,
+  useBootstrap,
   useBankExport,
   useCreatePayrollRun,
   useMyPayslips,
@@ -155,6 +157,10 @@ export function PayrollClient() {
   const { data: detail, isPending: detailLoading } = usePayrollRun(selectedId);
   const { data: payslips } = useMyPayslips();
   const action = usePayrollAction();
+  const { data: session } = useBootstrap();
+  const canRunPayroll =
+    (session?.permissions ?? []).includes("*") ||
+    (session?.permissions ?? []).includes("hr.payroll.manage");
   const bankExport = useBankExport();
 
   const exportBank = (id: number, period: string) =>
@@ -168,6 +174,18 @@ export function PayrollClient() {
         <h1 className="text-2xl font-semibold tracking-[-0.02em]">Payroll</h1>
         <NewRunDialog />
       </div>
+
+      {canRunPayroll ? (
+        <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <p className="text-[13px] text-muted-foreground">
+            A run covers everyone with a basic salary on their record. Set salaries and
+            allowances on the employee.
+          </p>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/hr/employees">Open employees</Link>
+          </Button>
+        </Card>
+      ) : null}
 
       {/* Runs list */}
       <Card className="overflow-hidden">

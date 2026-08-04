@@ -60,6 +60,8 @@ class EmployeeController extends ApiController
             'employment_type' => ['nullable', 'in:full_time,contract,nysc,intern'],
             'hired_at' => ['nullable', 'date'],
             'base_salary' => ['nullable', 'numeric', 'min:0'],
+            'allowances' => ['sometimes', 'nullable', 'array'],
+            'allowances.*' => ['numeric', 'min:0'],
             'nin' => ['nullable', 'string', 'max:20'],
             'bvn' => ['nullable', 'string', 'max:20'],
             'bank_name' => ['nullable', 'string', 'max:80'],
@@ -125,6 +127,8 @@ class EmployeeController extends ApiController
             'employment_type' => ['sometimes', 'in:full_time,contract,nysc,intern'],
             'status' => ['sometimes', 'in:active,on_leave,suspended,exited'],
             'base_salary' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'allowances' => ['sometimes', 'nullable', 'array'],
+            'allowances.*' => ['numeric', 'min:0'],
         ]);
 
         $before = $employee->only(array_keys($data));
@@ -182,7 +186,10 @@ class EmployeeController extends ApiController
         ];
 
         if ($withSensitive) {
-            $base += $e->only(self::SENSITIVE_FIELDS) + ['base_salary' => $e->base_salary];
+            $base += $e->only(self::SENSITIVE_FIELDS) + [
+                'base_salary' => $e->base_salary,
+                'allowances' => $e->allowances ?? [],
+            ];
         }
 
         return $base;

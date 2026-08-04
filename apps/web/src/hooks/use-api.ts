@@ -92,7 +92,15 @@ export type LeaveRow = {
 
 export type LeaveBalanceRow = { type: string; entitled: number; used: number; remaining: number };
 
-export type LeaveTypeRow = { id: number; name: string; days_per_year: number };
+export type LeaveTypeRow = {
+  id: number;
+  name: string;
+  days_per_year: number;
+  requires_approval: boolean;
+  is_paid: boolean;
+  /** Staff have already booked against it, so it cannot be deleted. */
+  in_use: boolean;
+};
 
 export type AttendanceRow = {
   id: number;
@@ -292,6 +300,44 @@ export function useLeaveTypes() {
     queryKey: ["leave", "types"],
     queryFn: () => get<LeaveTypeRow[]>("/hr/leave-types").then((r) => r.data),
     staleTime: 5 * 60_000,
+  });
+}
+
+export type LeaveTypePayload = {
+  name: string;
+  days_per_year: number;
+  requires_approval: boolean;
+  is_paid: boolean;
+};
+
+export function useSaveLeaveType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id?: number } & LeaveTypePayload) =>
+      id ? patch<LeaveTypeRow>(`/hr/leave-types/${id}`, payload) : post<LeaveTypeRow>("/hr/leave-types", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave"] }),
+  });
+}
+
+export function useDeleteLeaveType() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/hr/leave-types/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["leave"] }),
+  });
+}
+
+/** Full record including salary, for people who may see sensitive fields. */
+export type EmployeeDetail = EmployeeRow & {
+  base_salary?: number | string | null;
+  allowances?: Record<string, number | string>;
+};
+
+export function useEmployeeDetail(publicId: string | null) {
+  return useQuery({
+    queryKey: ["employees", publicId],
+    queryFn: () => get<EmployeeDetail>(`/hr/employees/${publicId}`).then((r) => r.data),
+    enabled: Boolean(publicId),
   });
 }
 
