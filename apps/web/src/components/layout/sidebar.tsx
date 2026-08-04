@@ -6,6 +6,8 @@ import { useBootstrap } from "@/hooks/use-api";
 import {
   LayoutDashboard,
   Users,
+  Users2,
+  UserRound,
   Building2,
   IdCard,
   Clock,
@@ -39,6 +41,8 @@ const nav = [
   {
     label: "People",
     items: [
+      { href: "/profile", icon: UserRound, name: "My profile" },
+      { href: "/hr/team", icon: Users2, name: "My team" },
       { href: "/hr/employees", icon: Users, name: "Employees" },
       { href: "/hr/departments", icon: Building2, name: "Departments" },
       { href: "/hr/positions", icon: IdCard, name: "Positions" },

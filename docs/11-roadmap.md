@@ -21,7 +21,8 @@ Status of this repository against the full product scope. ✅ implemented here �
 | # | Module | Status | Notes |
 |---|---|---|---|
 | 1 | Dashboard | ✅ | Summary stats API + executive UI (KPIs, charts, feeds) |
-| 2 | HR: employees, departments, positions, offices | ✅ | Digital personnel file fields incl. encrypted NIN/BVN/bank |
+| 2 | HR: employees, departments, positions, offices | ✅ | Digital personnel file fields incl. encrypted NIN/BVN/bank; departments + positions CRUD with in-use delete guards; admin employee editing incl. manager assignment |
+| 2 | HR: employee self-service + team leads | ✅ | Staff complete their own personnel file (personal, statutory/bank, emergency contacts, guarantors) with a live completion meter; HR-owned fields stay read-only. Managers get `hr.team.view`: direct-report roster with today's attendance status, profile completion and pending-leave queue; leave requests notify the employee's own manager. Document upload requests next |
 | 2 | HR: attendance (GPS geofence, QR, late detection) | ✅ | Biometric/face = integration points |
 | 2 | HR: leave (types, balances, approval workflow) | ✅ | |
 | 2 | HR: payroll | ✅ | Versioned PAYE tables (NTA 2026 + legacy CRA), pension, draft→approve→publish runs, payslip PDFs, adjustments, bank export CSV |

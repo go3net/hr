@@ -17,7 +17,7 @@ class EmployeeController extends ApiController
         $this->requirePermission('hr.employees.view');
 
         $employees = Employee::query()
-            ->with(['department:id,name', 'position:id,title', 'user:id,status'])
+            ->with(['department:id,name', 'position:id,title', 'user:id,status', 'manager:id,first_name,last_name'])
             ->when($request->query('q'), function ($query, $q) {
                 $query->where(fn ($w) => $w
                     ->where('first_name', 'like', "%{$q}%")
@@ -160,6 +160,9 @@ class EmployeeController extends ApiController
             'department_id' => $e->department_id,
             'position' => $e->position?->title,
             'position_id' => $e->position_id,
+            'manager' => $e->manager ? "{$e->manager->first_name} {$e->manager->last_name}" : null,
+            'manager_id' => $e->manager_id,
+            'profile_percent' => app(\App\Modules\Hr\Services\ProfileCompleteness::class)->for($e)['percent'],
             'employment_type' => $e->employment_type,
             'status' => $e->status,
             'hired_at' => $e->hired_at?->toDateString(),

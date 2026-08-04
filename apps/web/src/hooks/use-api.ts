@@ -62,6 +62,9 @@ export type EmployeeRow = {
   department_id: number | null;
   position: string | null;
   position_id: number | null;
+  manager: string | null;
+  manager_id: number | null;
+  profile_percent: number;
   employment_type: string;
   status: string;
   hired_at: string | null;
@@ -1917,5 +1920,117 @@ export function useInviteEmployee() {
         `/hr/employees/${publicId}/invite`,
       ).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+/* ── Self-service profile & my team ────────────────────────────── */
+
+export type ProfileContact = {
+  id: number;
+  name: string;
+  relationship?: string;
+  occupation?: string;
+  phone: string;
+  address: string | null;
+};
+
+export type MyProfile = {
+  employee_code: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  department: string | null;
+  position: string | null;
+  manager: string | null;
+  employment_type: string;
+  status: string;
+  hired_at: string | null;
+  phone: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  marital_status: string | null;
+  address: string | null;
+  nin: string | null;
+  bvn: string | null;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  pension_pin: string | null;
+  emergency_contacts: ProfileContact[];
+  guarantors: ProfileContact[];
+  completeness: {
+    percent: number;
+    missing: { key: string; label: string; section: string }[];
+    has_emergency_contact: boolean;
+    has_guarantor: boolean;
+  };
+};
+
+export function useMyProfile() {
+  return useQuery({
+    queryKey: ["my-profile"],
+    queryFn: () => get<MyProfile>("/hr/me/profile").then((r) => r.data),
+    retry: false,
+  });
+}
+
+export function useUpdateMyProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      patch<MyProfile>("/hr/me/profile", payload).then((r) => r.data),
+    onSuccess: (data) => queryClient.setQueryData(["my-profile"], data),
+  });
+}
+
+export function useAddNextOfKin(kind: "emergency-contacts" | "guarantors") {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) =>
+      post<MyProfile>(`/hr/me/profile/${kind}`, payload).then((r) => r.data),
+    onSuccess: (data) => queryClient.setQueryData(["my-profile"], data),
+  });
+}
+
+export function useRemoveNextOfKin(kind: "emergency-contacts" | "guarantors") {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy<MyProfile>(`/hr/me/profile/${kind}/${id}`).then((r) => r.data),
+    onSuccess: (data) => queryClient.setQueryData(["my-profile"], data),
+  });
+}
+
+export type TeamMemberRow = {
+  id: string;
+  employee_id: number;
+  name: string;
+  employee_code: string;
+  email: string | null;
+  department: string | null;
+  position: string | null;
+  status: string;
+  account_status: string | null;
+  today: "present" | "late" | "absent" | "on_leave";
+  clocked_in_at: string | null;
+  profile_percent: number;
+};
+
+export type TeamMeta = {
+  has_employee_record: boolean;
+  scope: "all" | "direct_reports";
+  team_size: number;
+  present_today: number;
+  on_leave_today: number;
+  pending_leave: number;
+  can_approve_leave: boolean;
+};
+
+export function useMyTeam(all = false) {
+  return useQuery({
+    queryKey: ["team", all],
+    queryFn: () =>
+      get<TeamMemberRow[]>(`/hr/team${all ? "?all=1" : ""}`).then((r) => ({
+        team: r.data,
+        meta: (r.meta ?? {}) as unknown as TeamMeta,
+      })),
   });
 }

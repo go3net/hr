@@ -22,9 +22,11 @@ use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
 use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\LifecycleController;
+use App\Modules\Hr\Http\MyProfileController;
 use App\Modules\Hr\Http\PayrollController;
 use App\Modules\Hr\Http\PerformanceController;
 use App\Modules\Hr\Http\PositionController;
+use App\Modules\Hr\Http\TeamController;
 use App\Modules\Hr\Http\RecruitmentController;
 use App\Modules\Inventory\Http\InventoryController;
 use App\Modules\Knowledge\Http\KnowledgeController;
@@ -130,6 +132,17 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
 
             Route::apiResource('departments', DepartmentController::class)->except(['show']);
             Route::apiResource('positions', PositionController::class)->except(['show']);
+
+            // Employee self-service
+            Route::get('/me/profile', [MyProfileController::class, 'show']);
+            Route::patch('/me/profile', [MyProfileController::class, 'update']);
+            Route::post('/me/profile/emergency-contacts', [MyProfileController::class, 'storeContact']);
+            Route::delete('/me/profile/emergency-contacts/{contact}', [MyProfileController::class, 'destroyContact']);
+            Route::post('/me/profile/guarantors', [MyProfileController::class, 'storeGuarantor']);
+            Route::delete('/me/profile/guarantors/{guarantor}', [MyProfileController::class, 'destroyGuarantor']);
+
+            // Manager / team lead view
+            Route::get('/team', [TeamController::class, 'index']);
 
             Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn']);
             Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut']);

@@ -179,6 +179,7 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
   const update = useUpdateEmployee();
   const { data: departments } = useDepartments();
   const { data: positions } = usePositions();
+  const { data: colleagues } = useEmployees("");
   const [form, setForm] = useState({
     first_name: employee.first_name,
     last_name: employee.last_name,
@@ -186,6 +187,7 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
     phone: employee.phone ?? "",
     department_id: employee.department_id ? String(employee.department_id) : "",
     position_id: employee.position_id ? String(employee.position_id) : "",
+    manager_id: employee.manager_id ? String(employee.manager_id) : "",
     employment_type: employee.employment_type,
     status: employee.status,
   });
@@ -204,6 +206,7 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
         phone: form.phone.trim() || null,
         department_id: form.department_id ? Number(form.department_id) : null,
         position_id: form.position_id ? Number(form.position_id) : null,
+        manager_id: form.manager_id ? Number(form.manager_id) : null,
         employment_type: form.employment_type,
         status: form.status,
       },
@@ -260,6 +263,20 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
                 ))}
               </Select>
             </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="e-manager">Reports to (manager / team lead)</Label>
+            <Select id="e-manager" value={form.manager_id} onChange={(e) => set("manager_id", e.target.value)}>
+              <option value="">No manager</option>
+              {(colleagues ?? [])
+                .filter((c) => c.employee_id !== employee.employee_id && c.status !== "exited")
+                .map((c) => (
+                  <option key={c.id} value={c.employee_id}>
+                    {c.name} ({c.employee_code})
+                  </option>
+                ))}
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
