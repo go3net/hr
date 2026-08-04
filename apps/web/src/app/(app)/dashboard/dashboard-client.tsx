@@ -26,6 +26,7 @@ import {
   usePendingLeave,
 } from "@/hooks/use-api";
 import { formatDate } from "@/lib/utils";
+import { MyDashboard } from "./my-dashboard";
 
 function StatCard({
   name,
@@ -73,6 +74,20 @@ const actionLabels: Record<string, string> = {
 };
 
 export function DashboardClient() {
+  const { data: session, isPending: sessionLoading } = useBootstrap();
+
+  // Company headcount, attendance and leave figures are management
+  // information — staff without people-visibility get their own day instead.
+  const permissions = session?.permissions ?? [];
+  const seesCompanyWide = permissions.includes("*") || permissions.includes("hr.employees.view");
+
+  if (sessionLoading) return <Skeleton className="h-64" />;
+  if (!seesCompanyWide) return <MyDashboard />;
+
+  return <CompanyDashboard />;
+}
+
+function CompanyDashboard() {
   const { data: session } = useBootstrap();
   const { data: summary, isPending: summaryLoading } = useDashboardSummary();
   const { data: charts, isPending: chartsLoading } = useDashboardCharts();

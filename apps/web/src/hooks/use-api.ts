@@ -129,6 +129,28 @@ export function useDashboardSummary() {
   });
 }
 
+/**
+ * Same endpoint as useDashboardSummary — the API returns personal figures
+ * instead of company ones when the caller cannot see company data.
+ */
+export type MyDashboard = {
+  has_employee_record: boolean;
+  clocked_in: boolean;
+  clocked_in_at: string | null;
+  is_late_today?: boolean;
+  leave_pending: number;
+  leave_taken_this_year: number;
+  profile_percent: number;
+  open_tasks: number;
+};
+
+export function useMyDashboard() {
+  return useQuery({
+    queryKey: ["dashboard", "summary", "personal"],
+    queryFn: () => get<MyDashboard>("/dashboard/summary").then((r) => r.data),
+  });
+}
+
 export function useActivity() {
   return useQuery({
     queryKey: ["dashboard", "activity"],
