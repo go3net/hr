@@ -329,6 +329,7 @@ export function useDeleteLeaveType() {
 
 /** Full record including salary, for people who may see sensitive fields. */
 export type EmployeeDetail = EmployeeRow & {
+  work_schedule_id?: number | null;
   base_salary?: number | string | null;
   allowances?: Record<string, number | string>;
 };
@@ -338,6 +339,73 @@ export function useEmployeeDetail(publicId: string | null) {
     queryKey: ["employees", publicId],
     queryFn: () => get<EmployeeDetail>(`/hr/employees/${publicId}`).then((r) => r.data),
     enabled: Boolean(publicId),
+  });
+}
+
+export type WorkScheduleRow = {
+  id: number;
+  name: string;
+  /** "HH:MM" — resumption time. */
+  starts_at: string;
+  ends_at: string;
+  grace_minutes: number;
+  /** ISO weekday numbers, 1 = Monday. */
+  work_days: number[];
+  employees_count: number;
+};
+
+export type WorkSchedulePayload = Omit<WorkScheduleRow, "id" | "employees_count">;
+
+export function useWorkSchedules() {
+  return useQuery({
+    queryKey: ["work-schedules"],
+    queryFn: () => get<WorkScheduleRow[]>("/hr/work-schedules").then((r) => r.data),
+  });
+}
+
+export function useUnassignedSchedule() {
+  return useQuery({
+    queryKey: ["work-schedules", "unassigned"],
+    queryFn: () => get<{ unassigned: number }>("/hr/work-schedules/unassigned").then((r) => r.data),
+  });
+}
+
+export function useSaveWorkSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id?: number } & WorkSchedulePayload) =>
+      id
+        ? patch<WorkScheduleRow>(`/hr/work-schedules/${id}`, payload)
+        : post<WorkScheduleRow>("/hr/work-schedules", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["work-schedules"] }),
+  });
+}
+
+export function useDeleteWorkSchedule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/hr/work-schedules/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["work-schedules"] }),
+  });
+}
+
+export function useTerminateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...payload
+    }: { id: string; exit_date: string; reason: string; notes?: string | null }) =>
+      post(`/hr/employees/${id}/terminate`, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
+  });
+}
+
+export function useDeleteEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => destroy(`/hr/employees/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
   });
 }
 

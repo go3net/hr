@@ -93,11 +93,17 @@ class TeamTest extends TestCase
             'tenant_id' => $tenant->id, 'name' => 'Annual', 'days_per_year' => 20,
         ]);
 
+        $monday = now()->addWeek()->startOfWeek();
+
         $this->actingAsTenantUser($staffUser)
             ->postJson('/api/v1/hr/leave-requests', [
                 'leave_type_id' => $type->id,
-                'start_date' => now()->addWeek()->next('Monday')->toDateString(),
-                'end_date' => now()->addWeek()->next('Tuesday')->toDateString(),
+                // Anchored to one Monday and the day after it. Deriving each
+                // date independently made this fail whenever the suite ran on
+                // a Monday, because next('Monday') then landed a week beyond
+                // next('Tuesday') and the range ran backwards.
+                'start_date' => $monday->toDateString(),
+                'end_date' => $monday->copy()->addDay()->toDateString(),
                 'reason' => 'Family event',
             ])
             ->assertCreated();

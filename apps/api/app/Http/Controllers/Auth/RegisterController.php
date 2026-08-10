@@ -6,7 +6,9 @@ use App\Core\Http\ApiController;
 use App\Core\Tenancy\TenantContext;
 use App\Models\AuditLog;
 use App\Models\Role;
+use App\Models\LeaveType;
 use App\Models\Tenant;
+use App\Models\WorkSchedule;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,6 +48,33 @@ class RegisterController extends ApiController
             $superAdmin = Role::query()->whereNull('tenant_id')->where('key', 'super_admin')->first();
             if ($superAdmin) {
                 $user->roles()->attach($superAdmin->id);
+            }
+
+            // Attendance judges lateness against a work schedule; with none,
+            // nobody is ever marked late. Give every new workspace a sensible
+            // default it can edit rather than a silently inert feature.
+            WorkSchedule::create([
+                'tenant_id' => $tenant->id,
+                'name' => 'Standard hours',
+                'starts_at' => '09:00',
+                'ends_at' => '17:00',
+                'grace_minutes' => 15,
+                'work_days' => [1, 2, 3, 4, 5],
+            ]);
+
+            // The leave kinds staff pick from when requesting time off.
+            foreach ([
+                ['Annual', 20],
+                ['Sick', 10],
+                ['Compassionate', 5],
+                ['Maternity', 112],
+                ['Paternity', 14],
+            ] as [$name, $days]) {
+                LeaveType::create([
+                    'tenant_id' => $tenant->id,
+                    'name' => $name,
+                    'days_per_year' => $days,
+                ]);
             }
 
             return [$tenant, $user];
