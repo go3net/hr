@@ -4,12 +4,18 @@ namespace App\Models;
 
 use App\Core\Tenancy\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WorkSchedule extends Model
 {
     use BelongsToTenant;
 
     protected $fillable = ['tenant_id', 'name', 'starts_at', 'ends_at', 'grace_minutes', 'work_days'];
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
 
     protected function casts(): array
     {

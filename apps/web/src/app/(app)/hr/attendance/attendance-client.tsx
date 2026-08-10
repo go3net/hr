@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAttendanceToday, useClockIn, useClockOut } from "@/hooks/use-api";
+import { useAttendanceToday, useBootstrap, useClockIn, useClockOut } from "@/hooks/use-api";
+import { WorkHoursDialog } from "./work-hours-dialog";
 import { ApiError } from "@/lib/api";
 
 function methodLabel(method: string): string {
@@ -20,6 +21,9 @@ function timeOf(iso: string | null): string {
 }
 
 export function AttendanceClient() {
+  const { data: session } = useBootstrap();
+  const permissions = session?.permissions ?? [];
+  const canSetHours = permissions.includes("*") || permissions.includes("hr.employees.manage");
   const { data, isPending } = useAttendanceToday();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
@@ -69,7 +73,8 @@ export function AttendanceClient() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-[-0.02em]">Attendance</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {canSetHours ? <WorkHoursDialog /> : null}
           <Button variant="outline" onClick={handleClockOut} disabled={clockOut.isPending}>
             {clockOut.isPending ? <Loader2 className="animate-spin" /> : <LogOut />} Clock out
           </Button>

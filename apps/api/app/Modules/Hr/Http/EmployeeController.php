@@ -5,8 +5,10 @@ namespace App\Modules\Hr\Http;
 use App\Core\Http\ApiController;
 use App\Models\AuditLog;
 use App\Models\Employee;
+use App\Models\EmploymentEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends ApiController
 {
@@ -138,6 +140,49 @@ class EmployeeController extends ApiController
         return $this->respond($this->present($employee->fresh(['department', 'position'])));
     }
 
+    /**
+     * Terminating keeps the person and their history — payslips, leave and
+     * attendance stay auditable — and closes their access. Deleting is for
+     * records created in error; it is the only path that removes anything.
+     */
+    public function terminate(Request $request, Employee $employee): JsonResponse
+    {
+        $this->requirePermission('hr.employees.manage');
+
+        $data = $request->validate([
+            'exit_date' => ['required', 'date'],
+            'reason' => ['required', 'in:resigned,dismissed,contract_ended,retired,other'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        abort_if($employee->status === 'exited', 422, 'This employee has already been terminated.');
+
+        DB::transaction(function () use ($employee, $data, $request) {
+            $employee->update(['status' => 'exited']);
+
+            EmploymentEvent::create([
+                'tenant_id' => $employee->tenant_id,
+                'employee_id' => $employee->id,
+                'type' => 'exit',
+                'title' => 'Left the company ('.str_replace('_', ' ', $data['reason']).')',
+                'notes' => $data['notes'] ?? null,
+                'occurred_on' => $data['exit_date'],
+                'recorded_by' => $request->user()->id,
+            ]);
+
+            // Revoke access: the login is disabled and every token dropped so
+            // an open session cannot outlive the termination.
+            if ($user = $employee->user) {
+                $user->update(['status' => 'disabled']);
+                $user->tokens()->delete();
+            }
+        });
+
+        AuditLog::record('employee.terminated', $employee);
+
+        return $this->respond($this->presentSummary($employee->fresh()));
+    }
+
     public function destroy(Employee $employee): JsonResponse
     {
         $this->requirePermission('hr.employees.manage');
@@ -180,6 +225,7 @@ class EmployeeController extends ApiController
             'gender' => $e->gender,
             'address' => $e->address,
             'manager' => $e->manager?->full_name,
+            'work_schedule_id' => $e->work_schedule_id,
             'emergency_contacts' => $e->relationLoaded('emergencyContacts') ? $e->emergencyContacts : null,
             'guarantors' => $e->relationLoaded('guarantors') ? $e->guarantors : null,
             'history' => $e->relationLoaded('employmentEvents') ? $e->employmentEvents : null,

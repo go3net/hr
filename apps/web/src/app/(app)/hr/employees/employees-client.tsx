@@ -19,10 +19,12 @@ import {
   useDepartments,
   useEmployeeDetail,
   useEmployees,
+  useWorkSchedules,
   useInviteEmployee,
   usePositions,
   useUpdateEmployee,
 } from "@/hooks/use-api";
+import { DangerZone } from "./danger-zone";
 import {
   SalarySection,
   fromAllowanceRows,
@@ -188,6 +190,7 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
   const { data: departments } = useDepartments();
   const { data: positions } = usePositions();
   const { data: colleagues } = useEmployees("");
+  const { data: schedules } = useWorkSchedules();
   const { data: session } = useBootstrap();
   const { data: detail } = useEmployeeDetail(employee.id);
 
@@ -199,12 +202,6 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
   const [allowances, setAllowances] = useState<AllowanceRow[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
-  // Seed the pay fields once the record arrives, without an effect.
-  if (detail && loadedFor !== employee.id) {
-    setLoadedFor(employee.id);
-    setBaseSalary(detail.base_salary != null ? String(detail.base_salary) : "");
-    setAllowances(toAllowanceRows(detail.allowances));
-  }
   const [form, setForm] = useState({
     first_name: employee.first_name,
     last_name: employee.last_name,
@@ -215,8 +212,20 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
     manager_id: employee.manager_id ? String(employee.manager_id) : "",
     employment_type: employee.employment_type,
     status: employee.status,
+    work_schedule_id: "",
   });
   const [error, setError] = useState<string | null>(null);
+
+  // Seed the pay fields once the record arrives, without an effect.
+  if (detail && loadedFor !== employee.id) {
+    setLoadedFor(employee.id);
+    setBaseSalary(detail.base_salary != null ? String(detail.base_salary) : "");
+    setAllowances(toAllowanceRows(detail.allowances));
+    setForm((f) => ({
+      ...f,
+      work_schedule_id: detail.work_schedule_id ? String(detail.work_schedule_id) : "",
+    }));
+  }
 
   const set = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -234,6 +243,7 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
         manager_id: form.manager_id ? Number(form.manager_id) : null,
         employment_type: form.employment_type,
         status: form.status,
+        work_schedule_id: form.work_schedule_id ? Number(form.work_schedule_id) : null,
         ...(canSeePay
           ? {
               base_salary: baseSalary === "" ? null : Number(baseSalary),
@@ -297,6 +307,18 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
           </div>
 
           <div className="grid gap-2">
+            <Label htmlFor="e-hours">Working hours</Label>
+            <Select id="e-hours" value={form.work_schedule_id} onChange={(e) => set("work_schedule_id", e.target.value)}>
+              <option value="">No schedule — never marked late</option>
+              {(schedules ?? []).map((sch) => (
+                <option key={sch.id} value={sch.id}>
+                  {sch.name} ({sch.starts_at}–{sch.ends_at})
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
             <Label htmlFor="e-manager">Reports to (manager / team lead)</Label>
             <Select id="e-manager" value={form.manager_id} onChange={(e) => set("manager_id", e.target.value)}>
               <option value="">No manager</option>
@@ -341,6 +363,9 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
           ) : null}
 
           {error ? <p className="text-sm text-danger">{error}</p> : null}
+
+          <DangerZone employee={employee} onDone={onDone} />
+
           <div className="flex justify-end">
             <Button
               onClick={submit}

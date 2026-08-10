@@ -27,6 +27,7 @@ use App\Modules\Hr\Http\PayrollController;
 use App\Modules\Hr\Http\PerformanceController;
 use App\Modules\Hr\Http\PositionController;
 use App\Modules\Hr\Http\TeamController;
+use App\Modules\Hr\Http\WorkScheduleController;
 use App\Modules\Hr\Http\RecruitmentController;
 use App\Modules\Inventory\Http\InventoryController;
 use App\Modules\Knowledge\Http\KnowledgeController;
@@ -128,10 +129,18 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::post('/employees/{employee:public_id}/invite', [EmployeeController::class, 'sendInvite']);
             Route::get('/employees/{employee:public_id}', [EmployeeController::class, 'show']);
             Route::patch('/employees/{employee:public_id}', [EmployeeController::class, 'update']);
+            Route::post('/employees/{employee:public_id}/terminate', [EmployeeController::class, 'terminate']);
             Route::delete('/employees/{employee:public_id}', [EmployeeController::class, 'destroy']);
 
             Route::apiResource('departments', DepartmentController::class)->except(['show']);
             Route::apiResource('positions', PositionController::class)->except(['show']);
+
+            // Resumption / closing hours that attendance judges lateness by.
+            Route::get('/work-schedules', [WorkScheduleController::class, 'index']);
+            Route::get('/work-schedules/unassigned', [WorkScheduleController::class, 'unassignedCount']);
+            Route::post('/work-schedules', [WorkScheduleController::class, 'store']);
+            Route::patch('/work-schedules/{workSchedule}', [WorkScheduleController::class, 'update']);
+            Route::delete('/work-schedules/{workSchedule}', [WorkScheduleController::class, 'destroy']);
 
             // Employee self-service
             Route::get('/me/profile', [MyProfileController::class, 'show']);
