@@ -1,115 +1,125 @@
-import type { BrandConfig } from "./types.js";
+import type { BrandConfig } from "./types";
 
-/**
- * Go3net Technologies Ltd — the technology company brand.
- * Positioning: a Nigerian tech company building serious software (including
- * Go3net Office, the cloud business operating system) and delivering IT
- * services that help African businesses run better.
- */
 export const go3net: BrandConfig = {
   slug: "go3net",
-  name: "Go3net Technologies Ltd",
-  tagline: "Technology that moves your business forward.",
-  website: "https://go3net.com.ng",
-  linkedinOrgIdEnv: "LINKEDIN_ORG_ID_GO3NET",
+  displayName: "Go3net Technologies",
 
-  audience: [
-    "Founders and executives of Nigerian SMEs",
-    "HR, operations, and finance leaders evaluating business software",
-    "IT decision-makers looking for a local implementation partner",
-    "Tech talent interested in working at Go3net",
-  ],
+  positioning:
+    "ICT consultancy and software engineering — bridging today's challenges with " +
+    "tomorrow's innovations",
+  promise: "Link to the future",
+
+  audience:
+    "Two audiences on one Page. First: Nigerian business decision-makers — MDs, " +
+    "operations heads, school proprietors, facility managers — evaluating who to " +
+    "trust with software, networks or IT support. Second: young Nigerians looking " +
+    "for a route into tech through training. Write for the first by default; the " +
+    "training pillar speaks to the second.",
 
   voice: {
-    personality:
-      "A confident, competent engineering partner — practical, ambitious, proudly Nigerian, never gimmicky.",
-    tone: ["professional", "clear", "optimistic", "authoritative"],
-    always: [
-      "Lead with the business outcome, then the technology",
-      "Use concrete, local examples (naira figures, Nigerian business contexts)",
-      "Write in plain English — explain any technical term you must use",
-      "End with one clear call to action",
+    traits: [
+      "professional",
+      "credible",
+      "plain-spoken",
+      "generous with expertise",
+      "quietly confident",
     ],
-    neverSay: [
-      "revolutionary",
-      "game-changer",
-      "world-class",
-      "synergy",
-      "we are pleased to announce", // corporate filler — say the news directly
+    guidance: [
+      "Consultancy voice, not startup voice. Measured. No hype, no exclamation marks.",
+      "Demonstrate competence by explaining something properly, not by claiming to be a leader.",
+      "Assume the reader is intelligent but not technical. Define jargon the first time.",
+      "Nigerian context is the differentiator — power, bandwidth, cost in naira, " +
+        "vendor availability, what actually survives in a Lagos office.",
+      "Values show through examples, never through stating them. Never write the " +
+        "words 'integrity', 'excellence' or 'professionalism' in a post.",
     ],
   },
 
   pillars: [
     {
-      key: "product",
-      name: "Go3net Office",
-      description:
-        "Feature spotlights, use cases, and customer wins for the Go3net Office platform (HR, tasks, CRM, finance, and more in one system).",
-      weight: 35,
-      exampleTopics: [
-        "How one dashboard replaces five spreadsheets for a 20-person company",
-        "Running payroll and leave approvals from your phone",
-        "Why multi-tenant SaaS matters for growing Nigerian businesses",
-      ],
-    },
-    {
-      key: "insights",
-      name: "Business & tech insights",
-      description:
-        "Practical guidance on digital transformation, productivity, and running a modern business in Africa.",
+      key: "technical_education",
+      name: "Technical Education",
       weight: 30,
-      exampleTopics: [
-        "Three signs your company has outgrown spreadsheets",
-        "What 'the cloud' actually means for your data and NDPR compliance",
-        "How to onboard a new employee in one day, not one week",
-      ],
+      brief:
+        "Explain one technical concept a business owner keeps hearing but has never " +
+        "had explained straight — what a VPN actually does, why their email lands in " +
+        "spam, what cloud backup costs and does not cover. Genuinely useful, no pitch.",
     },
     {
-      key: "culture",
-      name: "Company & culture",
-      description:
-        "Team stories, engineering culture, hiring, and milestones — the people behind the product.",
+      key: "case_and_capability",
+      name: "Case & Capability",
+      weight: 25,
+      brief:
+        "What we built or fixed and what it changed for the client. Anonymise unless " +
+        "the client has agreed to be named in the topic seed. Focus on the problem and " +
+        "the decision, not the tech stack.",
+    },
+    {
+      key: "security_and_risk",
+      name: "Security & Risk",
       weight: 20,
-      exampleTopics: [
-        "A day in the life of a Go3net engineer",
-        "What we look for when we hire",
-        "Milestone and anniversary posts",
-      ],
+      brief:
+        "Practical protection for Nigerian businesses — invoice fraud, staff offboarding, " +
+        "phishing that actually circulates locally, backups. Never fear-mongering; every " +
+        "post ends with something the reader can do this week.",
     },
     {
-      key: "services",
-      name: "IT services",
-      description:
-        "Consulting, custom development, and infrastructure services Go3net delivers for clients.",
+      key: "training",
+      name: "Training & Talent",
       weight: 15,
-      exampleTopics: [
-        "When to build custom software vs. buy off the shelf",
-        "How we scope a software project so it ships on time",
-      ],
+      brief:
+        "The training institute — cohorts, what students build, routes into tech, honest " +
+        "advice about learning to code. Speaks to a younger audience, so the register " +
+        "can loosen slightly, but never becomes salesy.",
+    },
+    {
+      key: "company",
+      name: "Company & Industry",
+      weight: 10,
+      brief:
+        "Milestones, team, certifications, and a considered view on where African ICT is " +
+        "heading. This is the only pillar where Go3net talks about itself directly.",
     },
   ],
 
-  hashtags: [
-    "#Go3net",
-    "#BusinessSoftware",
-    "#NigerianTech",
-    "#DigitalTransformation",
-    "#SaaS",
-    "#TechInAfrica",
-  ],
+  format: {
+    targetWords: [120, 200] as [number, number],
+    hookMaxChars: 140,
+    hashtags: [2, 4] as [number, number],
+    preferredHashtags: [
+      "#ICTNigeria",
+      "#Cybersecurity",
+      "#TechInAfrica",
+      "#DigitalTransformation",
+    ],
+    cta: {
+      options: [
+        "If this is on your list this quarter, send us a message.",
+        "Questions about your own setup? Comment and I'll answer.",
+        "go3net.com.ng",
+      ],
+      omitOnPillars: ["technical_education", "security_and_risk"],
+    },
+  },
 
-  callsToAction: [
-    "Book a free demo of Go3net Office at go3net.com.ng",
-    "Follow Go3net for practical business technology insights",
-    "Talk to our team about your next software project",
-  ],
-
-  timezone: "Africa/Lagos",
-  postingSchedule: [
-    { dayOfWeek: 1, time: "09:00" }, // Monday morning — insights
-    { dayOfWeek: 3, time: "12:30" }, // Wednesday midday — product
-    { dayOfWeek: 5, time: "10:00" }, // Friday — culture / lighter content
-  ],
+  guardrails: {
+    banned: [
+      "leading provider",
+      "one-stop solution",
+      "cutting-edge",
+      "state-of-the-art",
+      "leverage",
+      "synergy",
+      "in today's digital age",
+      "we are excited to announce",
+    ],
+    rules: [
+      "Never name a client without explicit permission recorded in the topic seed.",
+      "Never publish specifics that expose a client's infrastructure — no IPs, vendors, " +
+        "topology, or details of a breach that could identify them.",
+      "Never quote a price or delivery timeline. Those are conversations, not posts.",
+      "No em-dashes. No emojis in Page voice except in the training pillar, and at most one.",
+      "Do not claim certifications, partnerships or awards not confirmed in the seed.",
+    ],
+  },
 };
-
-export default go3net;

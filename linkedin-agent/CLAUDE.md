@@ -1,65 +1,160 @@
 # LinkedIn Agent
 
-Autonomous LinkedIn content agent for **Go3net Technologies Ltd**. It drafts, schedules, publishes, and measures LinkedIn posts for two brands:
+Generates, routes for human approval, and publishes LinkedIn content for two
+company Pages owned by Go3net Technologies Limited.
 
-- **Go3net** — the technology company (IT services, software, the Go3net Office platform)
-- **SpeedFi** — the internet/connectivity brand
+## What this is
 
-Each brand has its own voice, audience, content pillars, and posting cadence, defined in code under `src/brands/`. The database (Prisma + PostgreSQL) is the source of truth for what has been drafted, approved, scheduled, and published.
+A standalone service. It writes draft posts with the Anthropic API, sends each
+draft to the owner over WhatsApp for approval, and publishes approved posts to
+LinkedIn on a schedule. It then pulls engagement back so the generator can learn
+which content pillars perform.
+
+Two brands, one codebase:
+
+- **Go3net Technologies** — ICT consultancy and software engineering
+- **SPEEDFI** — WhatsApp-first commerce platform for African small businesses
+
+## Decisions already made — do not relitigate these
+
+- **Standalone service.** Not inside the SPEEDFI codebase. Own repo, own
+  database, own deployment. SPEEDFI is live production; marketing tooling does
+  not share its deploy pipeline.
+- **Not n8n.** This needs OAuth refresh on a 60-day clock, a real state machine,
+  and content-history queries. Those belong in code and Postgres.
+- **Human approval on every post at launch.** Nothing publishes unattended.
+  This is a hard requirement, not a phase-one compromise. Do not add an
+  auto-publish path without being asked.
+- **Brand voice lives in TypeScript**, not the database, so tuning history is in
+  git.
+
+## Stack
+
+Next.js (App Router) + TypeScript, Prisma + PostgreSQL, deployed on Railway.
+Anthropic API for generation. Meta WhatsApp Cloud API for approvals. Cloudinary
+for images. This matches the stack used across the owner's other projects — do
+not substitute alternatives.
 
 ## Layout
 
 ```
-.
-├── CLAUDE.md               # You are here
-├── prisma/
-│   └── schema.prisma       # Brands, posts, engagement snapshots, agent runs
-└── src/
-    └── brands/
-        ├── types.ts        # BrandConfig contract
-        ├── go3net.ts       # Go3net brand voice + cadence
-        ├── speedfi.ts      # SpeedFi brand voice + cadence
-        └── index.ts        # Brand registry
+prisma/schema.prisma      Provided. Start from it; extend rather than redesign.
+src/brands/
+  types.ts                BrandConfig interface — derive from the two configs
+  go3net.ts               Provided
+  speedfi.ts              Provided
+  index.ts                registry keyed by slug
+src/lib/
+  anthropic.ts            generation client
+  linkedin.ts             OAuth, token refresh, publish, image upload, metrics
+  whatsapp.ts             Cloud API send + inbound webhook parsing
+  crypto.ts               encrypt/decrypt for token columns
+src/jobs/
+  generate.ts             daily: pick pillar, write drafts
+  approve.ts              inbound WhatsApp replies -> state transitions
+  publish.ts              due APPROVED/SCHEDULED posts -> LinkedIn
+  refreshTokens.ts        weekly
+  syncMetrics.ts          engagement backfill for published posts
+app/api/
+  auth/linkedin/          OAuth start + callback
+  webhooks/whatsapp/      Cloud API webhook (verify token + signature check)
+  cron/[job]/             invoked by Railway cron, guarded by CRON_SECRET
 ```
 
-## Commands
+## Build order
 
-```bash
-npm install                 # install dependencies
-npx prisma migrate dev      # create/apply migrations (needs DATABASE_URL)
-npx prisma generate         # regenerate the Prisma client
-npm run typecheck           # tsc --noEmit
-```
+1. Prisma schema + migration + seed from the brand configs
+2. `src/brands/types.ts` inferred from the two provided config files
+3. Crypto helper and env validation
+4. LinkedIn OAuth flow and token storage (works before API approval lands —
+   the app exists in dev tier, only publishing scope is gated)
+5. Generator with pillar rotation and last-30-posts de-duplication
+6. WhatsApp approval loop
+7. Publisher
+8. Metrics sync
+
+Steps 1-3 and 5-6 do not depend on LinkedIn approval. Build those first.
+
+## Generation rules
+
+The generator must:
+
+- Pick a pillar weighted by `Pillar.weight`, then penalise any pillar used in
+  the last 5 posts for that brand so nothing dominates a week.
+- Load the last 30 post bodies for that brand and instruct the model to avoid
+  repeating their hooks, structures and subjects.
+- Apply the brand's `guardrails.banned` list and `guardrails.rules` verbatim in
+  the prompt, then reject and regenerate (max 2 attempts) if a banned phrase
+  survives.
+- Refuse to invent client names, customer stories, metrics, testimonials or
+  certifications. If a pillar requires a real story and no topic seed supplies
+  one, skip that pillar and pick another. This is a correctness requirement —
+  a fabricated client story published to a company Page is the worst failure
+  this system can produce.
+- Rotate CTAs, honouring `format.cta.omitOnPillars`.
+
+## Approval protocol
+
+Draft goes out over WhatsApp with the brand, the pillar, and the full body.
+Replies:
+
+- `1` or `ok` → APPROVED
+- `edit: <instruction>` → CHANGES_REQUESTED, regenerate with the note as
+  additional context, increment `revisionRound`, send back
+- `no` or `skip` → DISCARDED
+- No reply within 12 hours → TIMED_OUT, post is not published, owner notified
+
+Every inbound message writes an `ApprovalEvent`. That table is append-only.
+
+## Non-negotiables
+
+- **Never publish twice.** `Post.linkedinPostUrn` is unique. Set status to
+  PUBLISHING before the API call and treat a unique-constraint failure on
+  retry as success, not error.
+- **Never log a token,** in any environment, including error handlers. Access
+  and refresh tokens are encrypted at rest with `TOKEN_ENCRYPTION_KEY`.
+- **Verify the WhatsApp webhook signature** on every inbound request. An
+  unsigned request must not be able to approve a post.
+- **Cron routes require `CRON_SECRET`.** They must not be publicly invokable.
+- Use the `LinkedIn-Version` header on every LinkedIn call and the `/rest/posts`
+  endpoint. The older `/v2/ugcPosts` endpoint is deprecated.
+
+## LinkedIn API status
+
+Community Management API access was requested on 11 Aug 2026 under
+"Go3net Technologies Limited", for Page management and Page analytics only.
+Approval is pending. Until it lands, the publisher should be behind a
+`LINKEDIN_PUBLISH_ENABLED` flag that logs the intended call instead of making
+it, so the whole pipeline can be exercised end to end.
+
+Images use register-then-reference: upload to LinkedIn, get an image URN, then
+attach the URN to the post. A direct image URL will not work.
 
 ## Environment
 
-Copy `.env.example` to `.env` and fill in:
+```
+DATABASE_URL
+ANTHROPIC_API_KEY
+LINKEDIN_CLIENT_ID
+LINKEDIN_CLIENT_SECRET
+LINKEDIN_REDIRECT_URI
+LINKEDIN_PUBLISH_ENABLED       false until API approval
+WHATSAPP_PHONE_NUMBER_ID
+WHATSAPP_ACCESS_TOKEN
+WHATSAPP_VERIFY_TOKEN
+WHATSAPP_APP_SECRET            for webhook signature verification
+APPROVER_NUMBERS               comma-separated, allowlist for approvals
+TOKEN_ENCRYPTION_KEY           32-byte key, base64
+CRON_SECRET
+CLOUDINARY_URL
+```
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `ANTHROPIC_API_KEY` | Content generation (Claude API) |
-| `LINKEDIN_ACCESS_TOKEN` | LinkedIn Marketing API token |
-| `LINKEDIN_ORG_ID_GO3NET` | LinkedIn organization URN id for the Go3net page |
-| `LINKEDIN_ORG_ID_SPEEDFI` | LinkedIn organization URN id for the SpeedFi page |
-| `TIMEZONE` | Scheduling timezone (default `Africa/Lagos`) |
+Validate all of these at boot with zod and fail loudly. A missing WhatsApp
+token should not surface as a silent no-op at 8:30am.
 
-Never hardcode tokens or organization ids — they always come from the environment.
+## Working style
 
-## How the agent works (pipeline)
-
-1. **Ideate** — generate `ContentIdea` rows per brand from its content pillars, respecting pillar weights.
-2. **Draft** — turn approved ideas into `Post` drafts using the brand's voice rules. A draft must pass the brand's `neverSay` list and stay within LinkedIn's 3,000-character limit.
-3. **Schedule** — assign drafts to the brand's posting slots (`postingSchedule` in the brand config). Never schedule two posts for the same brand on the same day.
-4. **Publish** — push due posts to the LinkedIn API; store the returned post URN on the `Post` row and mark it `PUBLISHED` (or `FAILED` with the error).
-5. **Measure** — capture `EngagementSnapshot` rows (impressions, reactions, comments, shares, clicks) at 24h, 72h, and 7d after publishing.
-
-Every end-to-end invocation is recorded as an `AgentRun` for observability.
-
-## Conventions
-
-- TypeScript, strict mode, ESM (`"type": "module"`).
-- Brand behavior lives in `src/brands/*.ts` — never inline brand copy, hashtags, or cadence anywhere else. Adding a brand = one new file conforming to `BrandConfig` + one registry entry in `src/brands/index.ts` + one `Brand` row (seeded by slug).
-- Post content is written for LinkedIn: hook in the first two lines (before the "…see more" fold), short paragraphs, 3–5 hashtags at the end, one clear CTA.
-- All scheduling math happens in the brand's timezone (`Africa/Lagos`), stored in UTC.
-- Drafts are never auto-published: a post must be moved to `APPROVED` (by a human or an explicit approval step) before the scheduler will pick it up.
+The owner runs the company and directs the work; he is comfortable running
+commands and reading code but is not a full-time engineer. Explain what a
+change does and why before making it. Prefer boring, readable code over clever
+abstractions. Ask before adding a dependency.

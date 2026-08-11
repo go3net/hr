@@ -1,51 +1,66 @@
-/**
- * Contract every brand file must satisfy. The agent reads nothing about a
- * brand from anywhere else — voice, cadence, and guardrails all live here.
- */
-
-export interface ContentPillar {
-  /** Stable key, stored on ContentIdea.pillar / Post.pillar. */
-  key: string;
-  name: string;
-  description: string;
-  /** Relative share of the content mix (weights are normalized across pillars). */
-  weight: number;
-  exampleTopics: string[];
-}
-
-export interface PostingSlot {
-  /** 0 = Sunday … 6 = Saturday, in the brand's timezone. */
-  dayOfWeek: number;
-  /** 24h "HH:mm" in the brand's timezone. */
-  time: string;
-}
+// BrandConfig — the contract both brand files satisfy, inferred from
+// go3net.ts and speedfi.ts. The agent reads brand voice from nowhere else.
 
 export interface BrandVoice {
-  personality: string;
-  tone: string[];
-  /** Rules the drafter must follow. */
-  always: string[];
-  /** Hard guardrails — a draft containing any of these is rejected. */
-  neverSay: string[];
+  traits: string[];
+  /// Style instructions passed verbatim to the generator.
+  guidance: string[];
+}
+
+export interface BrandPillar {
+  /// Stable identifier, mirrored into Pillar.key at seed time.
+  key: string;
+  name: string;
+  /// Relative sampling weight, mirrored into Pillar.weight at seed time.
+  weight: number;
+  /// Pillar-specific prompt context for the generator.
+  brief: string;
+}
+
+export interface BrandCta {
+  /// Rotate between these; never the same CTA twice in one week.
+  options: string[];
+  /// Pillar keys whose posts may skip the CTA entirely.
+  omitOnPillars: string[];
+}
+
+export interface BrandFormat {
+  /// [min, max] word count for a post body.
+  targetWords: [number, number];
+  /// The hook must land within this many characters — LinkedIn's fold.
+  hookMaxChars: number;
+  /// [min, max] hashtags per post.
+  hashtags: [number, number];
+  preferredHashtags: string[];
+  cta: BrandCta;
+}
+
+export interface BrandGuardrails {
+  /// Phrases that force a rejection and regeneration if they survive.
+  banned: string[];
+  /// Hard rules included verbatim in the generation prompt.
+  rules: string[];
+}
+
+/// Product-specific facts the generator may reference (SPEEDFI's assistant
+/// Zino, live channels). Optional — Go3net has none.
+export interface ProductNotes {
+  assistantName: string;
+  channels: string[];
 }
 
 export interface BrandConfig {
-  /** Must match Brand.slug in the database and the filename. */
+  /// Matches Brand.slug in the database and the filename.
   slug: string;
-  name: string;
-  tagline: string;
-  website: string;
-  /** Env var that holds the LinkedIn organization id (never the id itself). */
-  linkedinOrgIdEnv: string;
+  displayName: string;
 
-  audience: string[];
+  positioning: string;
+  promise: string;
+  audience: string;
+
   voice: BrandVoice;
-  pillars: ContentPillar[];
-
-  /** 3–5 get appended to each post; the drafter picks the most relevant. */
-  hashtags: string[];
-  callsToAction: string[];
-
-  timezone: string;
-  postingSchedule: PostingSlot[];
+  productNotes?: ProductNotes;
+  pillars: BrandPillar[];
+  format: BrandFormat;
+  guardrails: BrandGuardrails;
 }

@@ -1,113 +1,124 @@
-import type { BrandConfig } from "./types.js";
+import type { BrandConfig } from "./types";
 
-/**
- * SpeedFi — Go3net's internet/connectivity brand.
- * Positioning: fast, reliable, affordable internet for homes and businesses.
- * Warmer and more consumer-facing than the Go3net corporate brand.
- */
 export const speedfi: BrandConfig = {
   slug: "speedfi",
-  name: "SpeedFi",
-  tagline: "Fast internet. No stories.",
-  website: "https://go3net.com.ng/speedfi",
-  linkedinOrgIdEnv: "LINKEDIN_ORG_ID_SPEEDFI",
+  displayName: "SPEEDFI",
 
-  audience: [
-    "Households and remote workers who need dependable internet",
-    "Small businesses, shops, and offices choosing an ISP",
-    "Estate managers and property developers bundling connectivity",
-    "Gamers and streamers who care about latency, not just speed",
-  ],
+  positioning: "Africa's WhatsApp-first commerce operating system",
+  promise: "Sell Online. Close on WhatsApp.",
+
+  audience:
+    "Nigerian and African small business owners selling on WhatsApp and Instagram — " +
+    "fashion vendors, food businesses, gadget sellers, service providers. Mostly " +
+    "running the business alone or with one or two staff. Phone-first. Time-poor. " +
+    "Skeptical of software that promises a lot and delivers admin work.",
 
   voice: {
-    personality:
-      "The straight-talking friend who actually delivers — energetic, relatable, a little playful, always honest about what customers get.",
-    tone: ["friendly", "direct", "energetic", "trustworthy"],
-    always: [
-      "Talk about real customer situations (video calls, streaming, POS uptime, remote work)",
-      "Be specific about plans, speeds, and coverage — no vague promises",
-      "Keep sentences short and skimmable",
-      "Make it easy to act: one link or one number per post",
+    traits: ["simple", "conversational", "solution-focused", "confident", "human"],
+    guidance: [
+      "Write the way a smart friend who runs a business would talk, not the way a brand writes.",
+      "Short sentences. One idea per line. Plenty of white space — this is read on a phone.",
+      "Lead with the vendor's problem, not the product. The product is the second half of the post.",
+      "Concrete over clever. 'You lost the sale because you replied at 11pm' beats 'seamless customer engagement'.",
+      "Naira amounts, Nigerian business realities, real scenarios. No generic Silicon Valley examples.",
     ],
-    neverSay: [
-      "unlimited*", // no asterisk plans — if it has conditions, state them
-      "blazing-fast",
-      "best in the world",
-      "network issues are beyond our control", // own problems, don't deflect
-    ],
+  },
+
+  // The AI sales assistant inside SPEEDFI. Refer to Zino by name when the post
+  // is about the assistant; do not personify Zino elsewhere.
+  productNotes: {
+    assistantName: "Zino",
+    channels: ["WhatsApp Cloud API", "Paystack checkout"],
   },
 
   pillars: [
     {
-      key: "plans",
-      name: "Plans & offers",
-      description:
-        "Packages, pricing, coverage expansions, and promos — always concrete and honest.",
+      key: "business_education",
+      name: "Business Education",
       weight: 30,
-      exampleTopics: [
-        "What you can actually do on each SpeedFi plan",
-        "New coverage area announcements",
-        "Referral and installation promos",
-      ],
+      brief:
+        "Teach something a vendor can use today, with no mention of SPEEDFI until " +
+        "the last line at most. Pricing, follow-up, handling 'how much?', converting " +
+        "DMs, stock, repeat customers. Must be useful even to someone who never signs up.",
     },
     {
-      key: "reliability",
-      name: "Reliability & support",
-      description:
-        "Uptime, honest service updates, and how SpeedFi handles support — trust is the product.",
+      key: "product_education",
+      name: "Product Education",
       weight: 25,
-      exampleTopics: [
-        "What we do when the network has a bad day",
-        "How fast our average support ticket gets resolved",
-        "Meet the field team keeping your connection up",
-      ],
+      brief:
+        "Show one specific thing SPEEDFI does and what changes for the vendor because " +
+        "of it. One feature per post. Describe the outcome, not the settings screen.",
     },
     {
-      key: "lifestyle",
-      name: "Connected life & work",
-      description:
-        "Remote work, streaming, gaming, smart homes, and small-business connectivity tips.",
-      weight: 30,
-      exampleTopics: [
-        "A remote worker's checklist for interview-proof internet",
-        "How much data a Champions League stream really uses",
-        "Keeping your POS online when it matters most",
-      ],
+      key: "problem_solution",
+      name: "Problem to Solution",
+      weight: 20,
+      brief:
+        "Open on a painful, recognisable moment — the customer who ghosted, the order " +
+        "lost in 200 unread chats — then show the way out. Name the pain precisely " +
+        "enough that the reader feels caught.",
     },
     {
-      key: "community",
-      name: "Customers & community",
-      description:
-        "Customer spotlights, testimonials, and neighbourhood stories from areas SpeedFi serves.",
+      key: "customer_success",
+      name: "Customer Success",
       weight: 15,
-      exampleTopics: [
-        "Customer story: running an online store on SpeedFi",
-        "Estate spotlight: bringing a whole community online",
-      ],
+      brief:
+        "A real vendor, a real before and after. Never invent a customer, a quote, or " +
+        "a number. If no verified story is supplied in the topic seed, skip this pillar " +
+        "and pick another.",
+    },
+    {
+      key: "brand_community",
+      name: "Brand & Community",
+      weight: 10,
+      brief:
+        "Team, milestones, what we believe about African commerce, behind the scenes. " +
+        "Warm and human. This is the pillar where personality is allowed to run.",
     },
   ],
 
-  hashtags: [
-    "#SpeedFi",
-    "#FastInternet",
-    "#NigerianISP",
-    "#RemoteWork",
-    "#StayConnected",
-    "#InternetInNigeria",
-  ],
+  format: {
+    targetWords: [90, 160] as [number, number],
+    hookMaxChars: 140, // LinkedIn truncates around here — the hook must land above the fold
+    hashtags: [2, 4] as [number, number],
+    preferredHashtags: [
+      "#WhatsAppCommerce",
+      "#SmallBusinessNigeria",
+      "#SellOnWhatsApp",
+      "#AfricanBusiness",
+    ],
+    cta: {
+      // Rotate. Never use the same CTA twice in one week.
+      options: [
+        "Start free at speedfi.com",
+        "Tell me your biggest WhatsApp headache in the comments.",
+        "Link in the comments if you want to try it.",
+      ],
+      // Education posts earn trust; they do not always need a CTA.
+      omitOnPillars: ["business_education"],
+    },
+  },
 
-  callsToAction: [
-    "Check if SpeedFi covers your area — link in the comments",
-    "DM us your location for a same-week installation quote",
-    "Tag someone whose internet keeps embarrassing them",
-  ],
-
-  timezone: "Africa/Lagos",
-  postingSchedule: [
-    { dayOfWeek: 2, time: "08:30" }, // Tuesday morning commute
-    { dayOfWeek: 4, time: "17:00" }, // Thursday after-work scroll
-    { dayOfWeek: 6, time: "11:00" }, // Saturday — lifestyle content
-  ],
+  guardrails: {
+    banned: [
+      "revolutionary",
+      "game-changer",
+      "unlock",
+      "leverage",
+      "seamless",
+      "cutting-edge",
+      "in today's fast-paced world",
+      "dear entrepreneurs",
+    ],
+    rules: [
+      "Never state a customer count, revenue figure, growth percentage or testimonial " +
+        "unless it appears verbatim in the topic seed. No estimates, no 'thousands of'.",
+      "Never claim a feature that is not confirmed live.",
+      "No em-dashes. No emoji walls — at most two emojis, and only where a vendor " +
+        "would actually use one.",
+      "Do not open with a one-word sentence followed by a line break. It is the most " +
+        "recognisable AI-LinkedIn tic there is.",
+      "Do not name or compare against competitors.",
+    ],
+  },
 };
-
-export default speedfi;

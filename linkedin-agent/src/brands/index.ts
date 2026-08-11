@@ -1,6 +1,6 @@
-import type { BrandConfig } from "./types.js";
-import go3net from "./go3net.js";
-import speedfi from "./speedfi.js";
+import type { BrandConfig } from "./types";
+import { go3net } from "./go3net";
+import { speedfi } from "./speedfi";
 
 export const brands: Record<string, BrandConfig> = {
   [go3net.slug]: go3net,
@@ -17,5 +17,5 @@ export function getBrand(slug: string): BrandConfig {
   return brand;
 }
 
-export type { BrandConfig } from "./types.js";
+export type { BrandConfig } from "./types";
 export { go3net, speedfi };
