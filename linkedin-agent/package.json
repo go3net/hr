@@ -1,0 +1,19 @@
+{
+  "name": "linkedin-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Autonomous LinkedIn content agent for Go3net and SpeedFi",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.2.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.0",
+    "typescript": "^5.7.0"
+  }
+}
