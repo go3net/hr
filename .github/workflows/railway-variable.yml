@@ -1,0 +1,57 @@
+name: Railway Variable
+
+# Set one environment variable on one Railway service and redeploy it.
+#
+# The Railway dashboard is the normal place for this. This exists because the
+# project token lives here as a secret, so a variable can be set from the same
+# place that deploys — useful for a flag that ships with a feature.
+#
+# Not for secrets. workflow_dispatch inputs are stored in the run's metadata
+# in plain text and shown in the Actions UI; API keys and passwords belong in
+# the Railway dashboard.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to set it on"
+        required: true
+        default: api
+        type: choice
+        options: [api, worker, scheduler, reverb, web]
+      name:
+        description: "Variable name, e.g. PLATFORM_OWNER_EMAILS"
+        required: true
+      value:
+        description: "Value — NOT a secret, this is recorded in the run log"
+        required: true
+      redeploy:
+        description: "Redeploy the service so it picks the value up"
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: railway-deploy
+  cancel-in-progress: false
+
+jobs:
+  set:
+    name: Set ${{ github.event.inputs.name }} on ${{ github.event.inputs.service }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set the variable
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_ENVIRONMENT_ID: ${{ vars.RAILWAY_ENVIRONMENT_ID }}
+          REDEPLOY: ${{ github.event.inputs.redeploy == 'true' && '1' || '0' }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::Repository secret RAILWAY_TOKEN is empty."
+            exit 1
+          fi
+          ./infrastructure/railway/set-variable.sh \
+            "${{ github.event.inputs.service }}" \
+            "${{ github.event.inputs.name }}" \
+            "${{ github.event.inputs.value }}"

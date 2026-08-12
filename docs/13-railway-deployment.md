@@ -177,6 +177,33 @@ railway run --service api php artisan db:seed --class=ModuleSeeder --force
 Then visit `https://<web-domain>/register`, create the first workspace —
 its first user is Super Admin with a 14-day trial.
 
+### Opening the platform console
+
+Super Admin is the top of one workspace. The console that spans every
+workspace — plans, trials, revenue, suspend/reactivate — is granted by
+account, not by role, so no customer can grant it to themselves.
+
+Set on the **api** service (comma-separated, and it applies on the next
+restart):
+
+```
+PLATFORM_OWNER_EMAILS=you@go3net.com
+```
+
+Sign out and back in; **Go3net → Platform console** appears in the
+sidebar. With a shell available, `php artisan platform:owner <email>`
+sets the same thing on the user record instead.
+
+Without dashboard access, **Actions → Railway Variable → Run workflow**
+sets it using the same project token the deploy uses, and redeploys the
+service afterwards so it takes effect. Values entered there are recorded
+in the run log, so it is for flags and lists — never for API keys.
+
+The console reads account and billing facts plus headcount. It cannot
+read a customer's employees, salaries, documents or messages — tenant
+isolation still applies to the owner, and
+`tests/Feature/PlatformConsoleTest.php` asserts exactly that.
+
 ## 5. Domains, webhooks, checks
 
 - **Custom domains**: attach `go3net.app` (and the wildcard

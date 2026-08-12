@@ -30,6 +30,7 @@ import {
   ShieldCheck,
   Palette,
   CreditCard,
+  Globe2,
 } from "lucide-react";
 import { useBootstrap } from "@/hooks/use-api";
 
@@ -143,6 +144,14 @@ export const NAV: NavGroup[] = [
   },
 ];
 
+// Not part of NAV: this is the business behind the product, and it is granted
+// by a flag on the account rather than by any permission a workspace can hand
+// out. It appears for nobody else, in any workspace.
+const PLATFORM_GROUP: NavGroup = {
+  label: "Go3net",
+  items: [{ href: "/platform", icon: Globe2, name: "Platform console" }],
+};
+
 /**
  * The nav this member may actually use. Returns an empty list until the
  * session loads rather than the full menu — flashing admin links at an
@@ -165,6 +174,8 @@ export function useVisibleNav(): { groups: NavGroup[]; workspaceName: string; lo
         }),
       })).filter((group) => group.items.length > 0)
     : [];
+
+  if (session?.is_platform_owner) groups.push(PLATFORM_GROUP);
 
   return {
     groups,

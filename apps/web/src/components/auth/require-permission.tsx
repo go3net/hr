@@ -34,23 +34,40 @@ export function RequirePermission({
   }
 
   if (!hasPermission(session?.permissions, permission)) {
-    return (
-      <Card className="mx-auto flex max-w-md flex-col items-center gap-3 p-12 text-center">
-        <span className="flex size-11 items-center justify-center rounded-2xl bg-muted">
-          <Lock className="size-5 text-muted-foreground" strokeWidth={1.75} />
-        </span>
-        <div>
-          <p className="text-sm font-medium">You don&apos;t have access to this page</p>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            Ask an administrator if you need it for your role.
-          </p>
-        </div>
-        <Button asChild size="sm" variant="outline">
-          <Link href="/dashboard">Back to dashboard</Link>
-        </Button>
-      </Card>
-    );
+    return <NoAccess />;
   }
 
   return <>{children}</>;
+}
+
+/**
+ * The platform console, which spans every workspace. Not a permission — no
+ * workspace administrator can grant it, and no role carries it.
+ */
+export function RequirePlatformOwner({ children }: { children: React.ReactNode }) {
+  const { data: session, isPending } = useBootstrap();
+
+  if (isPending) return <Skeleton className="h-64" />;
+  if (!session?.is_platform_owner) return <NoAccess />;
+
+  return <>{children}</>;
+}
+
+function NoAccess() {
+  return (
+    <Card className="mx-auto flex max-w-md flex-col items-center gap-3 p-12 text-center">
+      <span className="flex size-11 items-center justify-center rounded-2xl bg-muted">
+        <Lock className="size-5 text-muted-foreground" strokeWidth={1.75} />
+      </span>
+      <div>
+        <p className="text-sm font-medium">You don&apos;t have access to this page</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          Ask an administrator if you need it for your role.
+        </p>
+      </div>
+      <Button asChild size="sm" variant="outline">
+        <Link href="/dashboard">Back to dashboard</Link>
+      </Button>
+    </Card>
+  );
 }

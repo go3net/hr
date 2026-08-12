@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => ResolveTenant::class,
             'module' => EnsureModuleEnabled::class,
+            'platform.owner' => \App\Http\Middleware\EnsurePlatformOwner::class,
         ]);
 
         // Tenant context MUST be bound before route-model binding runs,

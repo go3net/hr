@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'last_login_at',
         'provider',
         'provider_id',
+        'is_platform_owner',
     ];
 
     protected $hidden = [
@@ -44,6 +46,22 @@ class User extends Authenticatable
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Runs Go3net Office itself, not one workspace inside it.
+     *
+     * Either the flag on the record, or an address listed in
+     * `PLATFORM_OWNER_EMAILS`. The config route exists because the hosted
+     * stack runs migrations on deploy and nothing else — without it, granting
+     * the first owner would need a database shell nobody has.
+     */
+    protected function isPlatformOwner(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => (bool) $value
+                || in_array(mb_strtolower((string) $this->attributes['email'] ?? ''), config('platform.owners', []), true),
+        );
     }
 
     public function hasTwoFactorEnabled(): bool
