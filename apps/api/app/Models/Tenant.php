@@ -56,6 +56,11 @@ class Tenant extends Model
         return $this->hasMany(User::class);
     }
 
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
+
     public function modules(): BelongsToMany
     {
         return $this->belongsToMany(Module::class, 'tenant_modules')->withPivot('enabled')->withTimestamps();

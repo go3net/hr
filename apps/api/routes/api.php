@@ -32,6 +32,7 @@ use App\Modules\Hr\Http\RecruitmentController;
 use App\Modules\Inventory\Http\InventoryController;
 use App\Modules\Knowledge\Http\KnowledgeController;
 use App\Modules\Lms\Http\LmsController;
+use App\Modules\Platform\Http\PlatformController;
 use App\Modules\Projects\Http\ProjectController;
 use App\Modules\Settings\Http\BrandingController;
 use App\Modules\Settings\Http\RoleController;
@@ -85,6 +86,16 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         Route::get('/billing', [BillingController::class, 'show']);
         Route::post('/billing/checkout', [BillingController::class, 'checkout']);
         Route::post('/billing/verify', [BillingController::class, 'verify'])->middleware('throttle:20,1');
+
+        // Running Go3net Office as a business — every workspace on the platform,
+        // what it pays, when its trial lapses. Never a customer's HR data.
+        Route::prefix('platform')->middleware('platform.owner')->group(function () {
+            Route::get('/summary', [PlatformController::class, 'summary']);
+            Route::get('/signups', [PlatformController::class, 'signups']);
+            Route::get('/workspaces', [PlatformController::class, 'index']);
+            Route::get('/workspaces/{workspace}', [PlatformController::class, 'show']);
+            Route::patch('/workspaces/{workspace}', [PlatformController::class, 'update']);
+        });
 
         // Workspace settings: branding + roles
         Route::get('/settings/branding', [BrandingController::class, 'show']);

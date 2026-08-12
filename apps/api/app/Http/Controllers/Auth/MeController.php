@@ -51,6 +51,9 @@ class MeController extends ApiController
                 'subscription_ends_at' => $tenant->subscription_ends_at?->toIso8601String(),
             ] : null,
             'permissions' => $user->hasRole('super_admin') ? ['*'] : $user->permissionKeys(),
+            // Runs Go3net Office itself, as opposed to running one workspace in
+            // it. Deliberately not a permission — no tenant can grant it.
+            'is_platform_owner' => (bool) $user->is_platform_owner,
             'unread_notifications' => $user->unreadNotifications()->count(),
         ]);
     }

@@ -28,6 +28,8 @@ export type Bootstrap = {
     subscription_ends_at: string | null;
   } | null;
   permissions: string[];
+  /** Runs Go3net Office itself, not just one workspace inside it. */
+  is_platform_owner: boolean;
 };
 
 export type DashboardSummary = {
@@ -2176,5 +2178,100 @@ export function useMyTeam(all = false) {
         team: r.data,
         meta: (r.meta ?? {}) as unknown as TeamMeta,
       })),
+  });
+}
+
+/* ── Platform owner console ────────────────────────────────────── */
+
+export type PlatformSummary = {
+  workspaces: number;
+  active: number;
+  trialing: number;
+  suspended: number;
+  trials_ending_soon: number;
+  expired_trials: number;
+  revenue_this_month: number;
+  revenue_all_time: number;
+  seats: number;
+};
+
+export type WorkspaceRow = {
+  id: string;
+  name: string;
+  subdomain: string;
+  status: string;
+  plan_key: string | null;
+  trial_ends_at: string | null;
+  trial_days_left: number | null;
+  subscription_ends_at: string | null;
+  members_count: number;
+  headcount: number;
+  paid_total: number;
+  last_paid_at: string | null;
+  created_at: string;
+};
+
+export type WorkspaceDetail = WorkspaceRow & {
+  payments: {
+    id: number;
+    plan_key: string | null;
+    amount: number;
+    status: string;
+    channel: string | null;
+    paid_at: string | null;
+    created_at: string;
+  }[];
+  owner: { name: string; email: string; last_login_at: string | null } | null;
+};
+
+export function usePlatformSummary() {
+  return useQuery({
+    queryKey: ["platform", "summary"],
+    queryFn: () => get<PlatformSummary>("/platform/summary").then((r) => r.data),
+  });
+}
+
+export function usePlatformSignups() {
+  return useQuery({
+    queryKey: ["platform", "signups"],
+    queryFn: () =>
+      get<{ month: string; signups: number }[]>("/platform/signups").then((r) => r.data),
+  });
+}
+
+export function useWorkspaces(params: { q?: string; status?: string } = {}) {
+  const query = new URLSearchParams();
+  if (params.q) query.set("q", params.q);
+  if (params.status) query.set("status", params.status);
+  const suffix = query.toString() ? `?${query}` : "";
+
+  return useQuery({
+    queryKey: ["platform", "workspaces", params.q ?? "", params.status ?? ""],
+    queryFn: () => get<WorkspaceRow[]>(`/platform/workspaces${suffix}`).then((r) => r.data),
+  });
+}
+
+export function useWorkspace(id: string | null) {
+  return useQuery({
+    queryKey: ["platform", "workspace", id],
+    queryFn: () => get<WorkspaceDetail>(`/platform/workspaces/${id}`).then((r) => r.data),
+    enabled: Boolean(id),
+  });
+}
+
+export function useUpdateWorkspace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...payload
+    }: {
+      id: string;
+      status?: string;
+      plan_key?: string | null;
+      extend_trial_days?: number;
+    }) => patch<WorkspaceDetail>(`/platform/workspaces/${id}`, payload).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform"] }),
   });
 }
