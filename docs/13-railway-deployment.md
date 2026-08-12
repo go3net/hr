@@ -194,6 +194,11 @@ Sign out and back in; **Go3net → Platform console** appears in the
 sidebar. With a shell available, `php artisan platform:owner <email>`
 sets the same thing on the user record instead.
 
+Without dashboard access, **Actions → Railway Variable → Run workflow**
+sets it using the same project token the deploy uses, and redeploys the
+service afterwards so it takes effect. Values entered there are recorded
+in the run log, so it is for flags and lists — never for API keys.
+
 The console reads account and billing facts plus headcount. It cannot
 read a customer's employees, salaries, documents or messages — tenant
 isolation still applies to the owner, and
