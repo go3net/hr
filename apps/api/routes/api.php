@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\MeController;
 use App\Http\Controllers\Auth\OAuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\ModuleController;
@@ -43,6 +44,8 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
     // Public
     Route::post('/auth/register', RegisterController::class)->middleware('throttle:10,1');
     Route::post('/auth/login', [LoginController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('/auth/forgot-password', [PasswordResetController::class, 'sendLink'])->middleware('throttle:5,1');
+    Route::post('/auth/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1');
     Route::post('/auth/two-factor', [TwoFactorController::class, 'challenge'])->middleware('throttle:10,1');
     Route::get('/auth/oauth/{provider}/redirect', [OAuthController::class, 'redirect'])->middleware('throttle:20,1');
     Route::get('/auth/oauth/{provider}/callback', [OAuthController::class, 'callback'])->middleware('throttle:20,1');

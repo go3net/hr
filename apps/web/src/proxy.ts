@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "g3_session";
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/accept-invite"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/accept-invite"];
 
 /**
  * Reachable whether or not you are signed in. An invitation activates a
@@ -10,7 +10,7 @@ const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/accept-invite
  * opening the link to check it, and the setup page can never be reached.
  * The token identifies the account, not the cookie.
  */
-const ALWAYS_REACHABLE = ["/accept-invite"];
+const ALWAYS_REACHABLE = ["/accept-invite", "/reset-password"];
 
 /**
  * Route guard (Next 16 proxy — the successor to middleware.ts).
