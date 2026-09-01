@@ -223,6 +223,7 @@ class EmployeeController extends ApiController
         $base = $this->presentSummary($e) + [
             'date_of_birth' => $e->date_of_birth?->toDateString(),
             'gender' => $e->gender,
+            'marital_status' => $e->marital_status,
             'address' => $e->address,
             'manager' => $e->manager?->full_name,
             'work_schedule_id' => $e->work_schedule_id,

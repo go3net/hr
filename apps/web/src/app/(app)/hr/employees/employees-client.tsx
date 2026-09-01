@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Loader2, Pencil, Send, UsersRound } from "lucide-react";
+import { Plus, Search, Loader2, Pencil, Eye, Send, UsersRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -381,6 +381,49 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
   );
 }
 
+function EmployeeProfileDialog({ employee, onDone }: { employee: EmployeeRow; onDone: () => void }) {
+  const { data: detail, isPending } = useEmployeeDetail(employee.id);
+  const { data: session } = useBootstrap();
+  const canSeeSensitive = (session?.permissions ?? []).some((permission) => permission === "*" || permission === "hr.employees.view_sensitive");
+  const field = (label: string, value: string | number | null | undefined) => (
+    <div><p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-0.5 text-sm">{value || "—"}</p></div>
+  );
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onDone()}>
+      <DialogContent title={employee.name} description={`Employee profile · ${employee.employee_code}`}>
+        {isPending || !detail ? <Skeleton className="h-72 w-full" /> : (
+          <div className="max-h-[70vh] space-y-6 overflow-y-auto pr-1">
+            <section className="grid grid-cols-2 gap-4">
+              {field("Work email", detail.email)}{field("Phone", detail.phone)}
+              {field("Date of birth", detail.date_of_birth ? formatDate(detail.date_of_birth) : null)}{field("Gender", detail.gender)}
+              {field("Marital status", detail.marital_status)}{field("Address", detail.address)}
+              {field("Department", detail.department)}{field("Position", detail.position)}
+              {field("Employment type", typeLabels[detail.employment_type] ?? detail.employment_type)}{field("Hired", detail.hired_at ? formatDate(detail.hired_at) : null)}
+            </section>
+
+            <section className="space-y-2 border-t border-border pt-4">
+              <h3 className="text-sm font-semibold">Emergency contacts</h3>
+              {detail.emergency_contacts?.length ? detail.emergency_contacts.map((contact) => (
+                <div key={contact.id} className="rounded-lg bg-muted/40 p-3 text-sm"><p className="font-medium">{contact.name} · {contact.relationship}</p><p className="text-muted-foreground">{contact.phone}{contact.address ? ` · ${contact.address}` : ""}</p></div>
+              )) : <p className="text-sm text-muted-foreground">No emergency contacts submitted.</p>}
+            </section>
+
+            <section className="space-y-2 border-t border-border pt-4">
+              <h3 className="text-sm font-semibold">Guarantors</h3>
+              {detail.guarantors?.length ? detail.guarantors.map((guarantor) => (
+                <div key={guarantor.id} className="rounded-lg bg-muted/40 p-3 text-sm"><p className="font-medium">{guarantor.name} · {guarantor.occupation}</p><p className="text-muted-foreground">{guarantor.phone}{guarantor.address ? ` · ${guarantor.address}` : ""}</p></div>
+              )) : <p className="text-sm text-muted-foreground">No guarantors submitted.</p>}
+            </section>
+
+            {canSeeSensitive && <section className="space-y-3 border-t border-border pt-4"><h3 className="text-sm font-semibold">Payroll and statutory details</h3><div className="grid grid-cols-2 gap-4">{field("Basic salary", detail.base_salary != null ? `₦${Number(detail.base_salary).toLocaleString()}` : null)}{field("Bank", detail.bank_name)}{field("Account number", detail.bank_account_number)}{field("Pension PIN", detail.pension_pin)}{field("NIN", detail.nin)}{field("BVN", detail.bvn)}</div></section>}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AccountCell({ employee }: { employee: EmployeeRow }) {
   const invite = useInviteEmployee();
   const [setupUrl, setSetupUrl] = useState<string | null>(null);
@@ -439,6 +482,7 @@ function AccountCell({ employee }: { employee: EmployeeRow }) {
 export function EmployeesClient() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
+  const [viewing, setViewing] = useState<EmployeeRow | null>(null);
   const { data: employees, isPending, isError } = useEmployees(search);
 
   return (
@@ -511,14 +555,7 @@ export function EmployeesClient() {
                     {e.hired_at ? formatDate(e.hired_at) : "—"}
                   </td>
                   <td className="px-4 py-2.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Edit ${e.name}`}
-                      onClick={() => setEditing(e)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
+                    <div className="flex items-center"><Button variant="ghost" size="icon" aria-label={`View ${e.name}`} onClick={() => setViewing(e)}><Eye className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={`Edit ${e.name}`} onClick={() => setEditing(e)}><Pencil className="size-4" /></Button></div>
                   </td>
                 </tr>
               ))}
@@ -554,6 +591,7 @@ export function EmployeesClient() {
       </Card>
 
       {editing ? <EditEmployeeDialog employee={editing} onDone={() => setEditing(null)} /> : null}
+      {viewing ? <EmployeeProfileDialog employee={viewing} onDone={() => setViewing(null)} /> : null}
     </div>
   );
 }

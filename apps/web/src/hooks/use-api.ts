@@ -332,8 +332,19 @@ export function useDeleteLeaveType() {
 /** Full record including salary, for people who may see sensitive fields. */
 export type EmployeeDetail = EmployeeRow & {
   work_schedule_id?: number | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  marital_status?: string | null;
+  address?: string | null;
   base_salary?: number | string | null;
   allowances?: Record<string, number | string>;
+  nin?: string | null;
+  bvn?: string | null;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  pension_pin?: string | null;
+  emergency_contacts?: { id: number; name: string; relationship: string; phone: string; address?: string | null }[];
+  guarantors?: { id: number; name: string; occupation: string; phone: string; address?: string | null }[];
 };
 
 export function useEmployeeDetail(publicId: string | null) {
