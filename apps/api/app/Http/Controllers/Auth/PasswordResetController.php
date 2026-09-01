@@ -44,7 +44,6 @@ class PasswordResetController extends ApiController
             'email' => Str::lower($data['email']),
             'token' => $data['token'],
             'password' => $data['password'],
-            'password_confirmation' => $data['password_confirmation'],
         ], function ($user, string $password): void {
             $user->forceFill([
                 'password' => Hash::make($password),

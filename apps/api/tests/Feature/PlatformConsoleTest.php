@@ -54,7 +54,9 @@ class PlatformConsoleTest extends TestCase
             'amount' => 50_000,
             'reference' => 'g3n_platform_test',
             'status' => 'paid',
-            'paid_at' => now()->subDay(),
+            // Keep this in the current calendar month. Using "yesterday"
+            // made the revenue assertion fail whenever CI ran on the first.
+            'paid_at' => now(),
         ]);
 
         $owner = $this->createUserWithRole($home, 'super_admin', ['is_platform_owner' => true]);
