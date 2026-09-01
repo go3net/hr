@@ -194,6 +194,19 @@ Sign out and back in; **Go3net → Platform console** appears in the
 sidebar. With a shell available, `php artisan platform:owner <email>`
 sets the same thing on the user record instead.
 
+### Manually resetting an administrator password
+
+If email is not configured yet, use a Railway shell for the `api` service:
+
+```bash
+php artisan admin:reset-password admin@example.com
+```
+
+The command prompts privately for the new password and confirmation; never
+pass a password as a command argument or add it to a Railway variable. It
+accepts only workspace super admins or platform owners and revokes their
+existing API sessions after a successful reset.
+
 Without dashboard access, **Actions → Railway Variable → Run workflow**
 sets it using the same project token the deploy uses, and redeploys the
 service afterwards so it takes effect. Values entered there are recorded
