@@ -27,8 +27,8 @@ class EmployeeController extends ApiController
                     ->orWhere('employee_code', 'like', "%{$q}%")
                     ->orWhere('email', 'like', "%{$q}%"));
             })
-            ->when($request->query('filter.status'), fn ($query, $s) => $query->where('status', $s))
-            ->when($request->query('filter.department_id'), fn ($query, $d) => $query->where('department_id', $d))
+            ->when($this->filterParam($request, 'status'), fn ($query, $s) => $query->where('status', $s))
+            ->when($this->filterParam($request, 'department_id'), fn ($query, $d) => $query->where('department_id', $d))
             ->orderBy('first_name')
             ->cursorPaginate(min((int) $request->query('per_page', 25), 100));
 

@@ -21,8 +21,8 @@ class TaskController extends ApiController
             ->with(['assignees:id,name', 'project:id,name,color'])
             ->withCount('comments')
             ->whereNull('parent_id')
-            ->when($request->query('filter.project_id'), fn ($q, $id) => $q->where('project_id', $id))
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'project_id'), fn ($q, $id) => $q->where('project_id', $id))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->when($request->boolean('mine'), fn ($q) => $q->where(fn ($w) => $w
                 ->whereHas('assignees', fn ($a) => $a->where('users.id', $request->user()->id))
                 ->orWhere('created_by', $request->user()->id)))

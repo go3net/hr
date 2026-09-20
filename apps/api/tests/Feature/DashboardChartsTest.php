@@ -64,4 +64,26 @@ class DashboardChartsTest extends TestCase
         $this->assertSame(2, $charts['headcount'][0]['count']);
         $this->assertSame(1, $charts['headcount'][1]['count']);
     }
+
+    public function test_activity_feed_names_the_actor_once_there_is_history(): void
+    {
+        $this->seedCatalog();
+        $tenant = $this->createTenant();
+        $hr = $this->createUserWithRole($tenant, 'hr_manager', ['name' => 'Ada Lawal']);
+
+        // An empty workspace hid this: Eloquent skips eager loading when the
+        // query returns nothing, so a missing relation only blew up once a
+        // workspace had done anything at all — which is every real one.
+        $this->actingAsTenantUser($hr)
+            ->postJson('/api/v1/hr/departments', ['name' => 'Engineering'])
+            ->assertCreated();
+
+        $feed = $this->actingAsTenantUser($hr)
+            ->getJson('/api/v1/dashboard/activity')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertNotEmpty($feed);
+        $this->assertSame('Ada Lawal', $feed[0]['actor']);
+    }
 }

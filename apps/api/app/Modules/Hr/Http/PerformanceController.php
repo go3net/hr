@@ -30,7 +30,7 @@ class PerformanceController extends ApiController
         $objectives = Objective::query()
             ->with(['employee:id,first_name,last_name', 'keyResults'])
             ->when($scope !== 'team', fn ($q) => $q->where('employee_id', $myEmployeeId ?? -1))
-            ->when($request->query('filter.period'), fn ($q, $p) => $q->where('period', $p))
+            ->when($this->filterParam($request, 'period'), fn ($q, $p) => $q->where('period', $p))
             ->orderByDesc('created_at')
             ->limit(200)
             ->get()

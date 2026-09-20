@@ -22,7 +22,7 @@ class InventoryController extends ApiController
                     ->where('name', 'like', "%{$q}%")
                     ->orWhere('sku', 'like', "%{$q}%"));
             })
-            ->when($request->query('filter.category'), fn ($q, $c) => $q->where('category', $c))
+            ->when($this->filterParam($request, 'category'), fn ($q, $c) => $q->where('category', $c))
             ->orderBy('name')
             ->limit(300)
             ->get();

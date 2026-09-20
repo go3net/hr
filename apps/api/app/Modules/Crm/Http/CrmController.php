@@ -23,7 +23,7 @@ class CrmController extends ApiController
 
         $leads = Lead::query()
             ->with('owner:id,name')
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
             ->limit(200)
             ->get()

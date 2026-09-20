@@ -19,7 +19,7 @@ class KnowledgeController extends ApiController
         $articles = KbArticle::query()
             ->with('author:id,name')
             ->when(! $isEditor, fn ($q) => $q->published())
-            ->when($request->query('filter.category'), fn ($q, $c) => $q->where('category', $c))
+            ->when($this->filterParam($request, 'category'), fn ($q, $c) => $q->where('category', $c))
             ->when($request->query('q'), function ($q, $term) {
                 $q->where(fn ($w) => $w
                     ->where('title', 'like', "%{$term}%")

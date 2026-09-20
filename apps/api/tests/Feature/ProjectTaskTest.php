@@ -230,4 +230,46 @@ class ProjectTaskTest extends TestCase
         $this->assertCount(1, $comments);
         $this->assertSame('On it — ETA Friday.', $comments[0]['body']);
     }
+
+    public function test_a_project_board_shows_only_that_projects_tasks(): void
+    {
+        [, $pm] = $this->setUpUsers();
+
+        $project = $this->actingAsTenantUser($pm)
+            ->postJson('/api/v1/projects', ['name' => 'Website revamp'])
+            ->assertCreated()
+            ->json('data');
+
+        $this->actingAsTenantUser($pm)
+            ->postJson('/api/v1/tasks', ['title' => 'On the board', 'project_id' => $project['id']])
+            ->assertCreated();
+
+        // A standalone task, belonging to no project at all.
+        $this->actingAsTenantUser($pm)
+            ->postJson('/api/v1/tasks', ['title' => 'Unrelated errand'])
+            ->assertCreated();
+
+        // PHP rewrites dots in query keys to underscores, so the dotted
+        // spelling used to match nothing and every board showed every task in
+        // the workspace. All three spellings must filter for real.
+        foreach ([
+            'filter.project_id='.$project['id'],
+            'filter_project_id='.$project['id'],
+            'project_id='.$project['id'],
+            'filter[project_id]='.$project['id'],
+        ] as $query) {
+            $titles = collect($this->actingAsTenantUser($pm)
+                ->getJson('/api/v1/tasks?'.$query)
+                ->assertOk()
+                ->json('data'))
+                ->pluck('title');
+
+            $this->assertEquals(['On the board'], $titles->all(), "failed for ?{$query}");
+        }
+
+        // Without a filter both are listed, so the filter is doing the work.
+        $this->assertCount(2, $this->actingAsTenantUser($pm)
+            ->getJson('/api/v1/tasks')
+            ->json('data'));
+    }
 }

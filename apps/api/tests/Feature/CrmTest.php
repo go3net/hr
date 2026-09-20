@@ -121,4 +121,35 @@ class CrmTest extends TestCase
             ->postJson('/api/v1/crm/leads', ['name' => 'Nope'])
             ->assertForbidden();
     }
+
+    public function test_a_client_can_be_added_without_going_through_a_lead(): void
+    {
+        [, $manager, $employee] = $this->setUpUsers();
+
+        // Not every customer arrives as a lead — an existing account, a
+        // referral already agreed. Before this the Clients tab could only be
+        // filled sideways, by converting something.
+        $this->actingAsTenantUser($manager)
+            ->postJson('/api/v1/crm/clients', [
+                'name' => 'Chidi Nwosu',
+                'company' => 'Nwosu Holdings',
+                'email' => 'chidi@nwosu.test',
+                'phone' => '08012345678',
+            ])
+            ->assertCreated();
+
+        $clients = $this->actingAsTenantUser($manager)
+            ->getJson('/api/v1/crm/clients')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $clients);
+        $this->assertSame('Chidi Nwosu', $clients[0]['name']);
+        $this->assertSame('Nwosu Holdings', $clients[0]['company']);
+        $this->assertSame(0, $clients[0]['deals_count']);
+
+        $this->actingAsTenantUser($employee)
+            ->postJson('/api/v1/crm/clients', ['name' => 'Sneaky Ltd'])
+            ->assertForbidden();
+    }
 }

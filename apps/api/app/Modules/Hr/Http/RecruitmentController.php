@@ -22,7 +22,7 @@ class RecruitmentController extends ApiController
         $openings = JobOpening::query()
             ->with('department:id,name')
             ->withCount('applicants')
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
             ->limit(100)
             ->get()

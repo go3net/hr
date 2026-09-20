@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AuditLog extends Model
 {
@@ -15,6 +16,17 @@ class AuditLog extends Model
     protected function casts(): array
     {
         return ['changes' => 'array'];
+    }
+
+    /**
+     * Who did it. The dashboard's activity feed eager-loads this to name the
+     * actor; without it the feed 500s — but only once a workspace has any
+     * history at all, because Eloquent skips eager loading on an empty
+     * result. A brand-new workspace looked fine and every real one broke.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /** Write an audit entry for the current request context. */
