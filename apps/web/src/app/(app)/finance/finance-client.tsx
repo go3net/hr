@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input, Label } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/dialog";
 import {
+  useClients,
   useCreateInvoice,
   useCreateTransaction,
   useDecideTransaction,
@@ -106,10 +107,12 @@ type DraftItem = { description: string; quantity: string; unit_price: string };
 function NewInvoiceDialog() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientId, setClientId] = useState("");
   const [taxRate, setTaxRate] = useState("7.5");
   const [dueDate, setDueDate] = useState("");
   const [items, setItems] = useState<DraftItem[]>([{ description: "", quantity: "1", unit_price: "" }]);
   const createInvoice = useCreateInvoice();
+  const { data: clients } = useClients();
 
   const setItem = (index: number, patch: Partial<DraftItem>) =>
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...patch } : item)));
@@ -121,6 +124,7 @@ function NewInvoiceDialog() {
     setError(null);
     createInvoice.mutate(
       {
+        client_id: clientId ? Number(clientId) : undefined,
         issue_date: new Date().toISOString().slice(0, 10),
         due_date: dueDate || undefined,
         tax_rate: Number(taxRate) || 0,
@@ -131,6 +135,7 @@ function NewInvoiceDialog() {
       {
         onSuccess: () => {
           setItems([{ description: "", quantity: "1", unit_price: "" }]);
+          setClientId("");
           setOpen(false);
         },
         onError: (err) => setError(err instanceof ApiError ? err.message : "Could not create invoice."),
@@ -152,6 +157,25 @@ function NewInvoiceDialog() {
               {error}
             </div>
           )}
+
+          {/* An invoice nobody is addressed to cannot be sent or chased. The
+              list has always had a client column; this is what fills it. */}
+          <div className="space-y-1.5">
+            <Label htmlFor="inv-client">Bill to</Label>
+            <Select id="inv-client" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="">No client</option>
+              {clients?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.company ? `${c.name} · ${c.company}` : c.name}
+                </option>
+              ))}
+            </Select>
+            {clients?.length === 0 ? (
+              <p className="text-[12px] text-muted-foreground">
+                No clients yet — add one under CRM → Clients.
+              </p>
+            ) : null}
+          </div>
 
           <div className="space-y-2">
             <Label>Line items</Label>

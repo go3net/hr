@@ -72,8 +72,8 @@ class FinanceController extends ApiController
 
         $transactions = Transaction::query()
             ->with(['category:id,name', 'creator:id,name'])
-            ->when($request->query('filter.kind'), fn ($q, $k) => $q->where('kind', $k))
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'kind'), fn ($q, $k) => $q->where('kind', $k))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('occurred_on')
             ->orderByDesc('id')
             ->limit(200)

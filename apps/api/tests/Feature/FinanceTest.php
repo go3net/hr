@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Client;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\InteractsWithTenancy;
 use Tests\TestCase;
@@ -128,5 +129,37 @@ class FinanceTest extends TestCase
                 'kind' => 'income', 'amount' => 1, 'description' => 'x', 'occurred_on' => now()->toDateString(),
             ])
             ->assertForbidden();
+    }
+
+    public function test_an_invoice_can_be_addressed_to_a_client(): void
+    {
+        [$tenant, $finance] = $this->setUpUsers();
+
+        $client = Client::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'name' => 'Chidi Nwosu',
+            'company' => 'Nwosu Holdings',
+        ]);
+
+        $invoice = $this->actingAsTenantUser($finance)
+            ->postJson('/api/v1/finance/invoices', [
+                'client_id' => $client->id,
+                'issue_date' => now()->toDateString(),
+                'tax_rate' => 0,
+                'items' => [['description' => 'Retainer', 'quantity' => 1, 'unit_price' => 250_000]],
+            ])
+            ->assertCreated()
+            ->json('data');
+
+        // The list has always had a client column; an invoice with nobody to
+        // bill cannot be sent or chased, so the name has to survive the round
+        // trip rather than reading "No client" forever.
+        $listed = collect($this->actingAsTenantUser($finance)
+            ->getJson('/api/v1/finance/invoices')
+            ->assertOk()
+            ->json('data'))
+            ->firstWhere('id', $invoice['id']);
+
+        $this->assertSame('Chidi Nwosu', $listed['client']);
     }
 }

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogTrigger, Select } from "@/components/ui/di
 import {
   useClients,
   useConvertLead,
+  useCreateClient,
   useCreateDeal,
   useCreateLead,
   useDeals,
@@ -41,7 +42,7 @@ const leadStatusVariant = {
   lost: "danger",
 } as const;
 
-function NewLeadDialog() {
+function NewLeadDialog({ onCreated }: { onCreated?: () => void }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", company: "", email: "", source: "referral" });
@@ -56,6 +57,7 @@ function NewLeadDialog() {
         onSuccess: () => {
           setForm({ name: "", company: "", email: "", source: "referral" });
           setOpen(false);
+          onCreated?.();
         },
         onError: (err) => setError(err instanceof ApiError ? err.message : "Could not add lead."),
       },
@@ -160,7 +162,7 @@ function ConvertLeadDialog({ lead }: { lead: LeadRow }) {
   );
 }
 
-function NewDealDialog() {
+function NewDealDialog({ onCreated }: { onCreated?: () => void }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [value, setValue] = useState("");
@@ -202,7 +204,11 @@ function NewDealDialog() {
             onClick={() =>
               createDeal.mutate(
                 { title, value: value ? Number(value) : 0, client_id: clientId ? Number(clientId) : undefined },
-                { onSuccess: () => { setTitle(""); setValue(""); setClientId(""); setOpen(false); } },
+                {
+                  onSuccess: () => {
+                    setTitle(""); setValue(""); setClientId(""); setOpen(false); onCreated?.();
+                  },
+                },
               )
             }
           >
@@ -353,6 +359,99 @@ function Leads() {
   );
 }
 
+/**
+ * Converting a lead is the usual way a client appears, but not every client
+ * arrives as a lead — an existing customer, a referral already agreed over
+ * the phone. Without this the Clients tab could only ever be filled sideways,
+ * and an invoice had nobody to bill.
+ */
+function NewClientDialog({ onCreated }: { onCreated?: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", company: "", email: "", phone: "" });
+  const createClient = useCreateClient();
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    createClient.mutate(
+      {
+        name: form.name.trim(),
+        company: form.company.trim() || undefined,
+        email: form.email.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          setForm({ name: "", company: "", email: "", phone: "" });
+          setOpen(false);
+          onCreated?.();
+        },
+        onError: (err) =>
+          setError(err instanceof ApiError ? err.message : "Could not add this client."),
+      },
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Plus /> Add client
+        </Button>
+      </DialogTrigger>
+      <DialogContent title="Add client" description="Someone you already do business with.">
+        <form className="space-y-4" onSubmit={submit}>
+          {error ? <p className="text-[13px] text-danger">{error}</p> : null}
+          <div className="space-y-1.5">
+            <Label htmlFor="client-name">Client name</Label>
+            <Input
+              id="client-name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Chidi Nwosu"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="client-company">Company</Label>
+            <Input
+              id="client-company"
+              value={form.company}
+              onChange={(e) => setForm({ ...form, company: e.target.value })}
+              placeholder="Nwosu Holdings"
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="client-email">Email</Label>
+              <Input
+                id="client-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="chidi@example.com"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="client-phone">Phone</Label>
+              <Input
+                id="client-phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="0801 234 5678"
+              />
+            </div>
+          </div>
+          <Button type="submit" className="w-full" disabled={createClient.isPending || !form.name.trim()}>
+            {createClient.isPending && <Loader2 className="animate-spin" />}
+            Add client
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Clients() {
   const { data: clients, isPending } = useClients();
 
@@ -393,7 +492,7 @@ function Clients() {
             {!isPending && clients?.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-14 text-center text-[13px] text-muted-foreground">
-                  No clients yet — convert a lead to create one.
+                  No clients yet — add one, or convert a lead.
                 </td>
               </tr>
             )}
@@ -441,9 +540,12 @@ export function CrmClient() {
           <h1 className="text-2xl font-semibold tracking-[-0.02em]">CRM</h1>
           <Badge variant="primary">Open pipeline · {formatCurrency(totalOpen)}</Badge>
         </div>
+        {/* Saving lands you on the tab the new record is on — otherwise adding
+            a lead from the pipeline board looks like it did nothing. */}
         <div className="flex items-center gap-2">
-          <NewLeadDialog />
-          <NewDealDialog />
+          <NewClientDialog onCreated={() => setTab("clients")} />
+          <NewLeadDialog onCreated={() => setTab("leads")} />
+          <NewDealDialog onCreated={() => setTab("pipeline")} />
         </div>
       </div>
 

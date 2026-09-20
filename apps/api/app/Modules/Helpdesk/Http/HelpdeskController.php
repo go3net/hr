@@ -25,7 +25,7 @@ class HelpdeskController extends ApiController
             ->with(['requester:id,name', 'assignee:id,name'])
             ->withCount('comments')
             ->when(! $isAgent, fn ($q) => $q->where('requester_id', $request->user()->id))
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
             ->limit(200)
             ->get()

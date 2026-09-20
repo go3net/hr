@@ -96,7 +96,7 @@ class LeaveController extends ApiController
         $requests = LeaveRequest::query()
             ->with(['employee:id,first_name,last_name', 'leaveType:id,name'])
             ->when(! $canViewAll, fn ($q) => $q->where('employee_id', $ownEmployeeId ?? 0))
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
             ->cursorPaginate(min((int) $request->query('per_page', 25), 100));
 

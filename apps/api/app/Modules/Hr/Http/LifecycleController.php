@@ -145,7 +145,7 @@ class LifecycleController extends ApiController
                     ->orWhere('tag', 'like', "%{$q}%")
                     ->orWhere('serial_number', 'like', "%{$q}%"));
             })
-            ->when($request->query('filter.status'), fn ($q, $s) => $q->where('status', $s))
+            ->when($this->filterParam($request, 'status'), fn ($q, $s) => $q->where('status', $s))
             ->orderBy('tag')
             ->limit(300)
             ->get();
