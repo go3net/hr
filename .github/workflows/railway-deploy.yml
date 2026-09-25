@@ -36,6 +36,9 @@ jobs:
       # using another commit's script and service list.
       - uses: actions/checkout@v4
         with:
+          # Full history: selecting services needs a diff against the parent
+          # of the deployed commit, which a shallow clone does not carry.
+          fetch-depth: 0
           ref: >-
             ${{ github.event_name == 'workflow_run'
                 && github.event.workflow_run.head_sha
@@ -50,11 +53,77 @@ jobs:
             echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
 
+      # Only deploy the services a commit can actually affect. A docs-only
+      # change rebuilt all five for nothing; worse, every rebuild is a chance
+      # for an unrelated platform failure on a commit that changed no code.
+      #
+      # Fail-safe: an unrecognised path deploys everything. Only paths known
+      # to have no bearing on the Railway stack are treated as no-ops, so a
+      # new top-level directory errs toward deploying rather than skipping.
+      - name: Select services
+        id: select
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+          DISPATCH_SERVICES: ${{ github.event.inputs.services }}
+        run: |
+          set -euo pipefail
+
+          # A hand-run deploy says what it wants; never second-guess it.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch — deploying ${DISPATCH_SERVICES:-every service}."
+            echo "only=$DISPATCH_SERVICES" >> "$GITHUB_OUTPUT"
+            echo "deploy=yes" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! parent=$(git rev-parse -q --verify "$SHA^1"); then
+            echo "::notice::No parent for ${SHA:0:8} — deploying every service."
+            echo "only=" >> "$GITHUB_OUTPUT"
+            echo "deploy=yes" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # On a merge commit the first parent is the previous tip of main, so
+          # this is everything the merge brought in.
+          changed=$(git diff --name-only "$parent" "$SHA")
+          echo "Changed files:"
+          echo "$changed" | sed 's/^/  /'
+
+          api=no web=no all=no
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            case "$f" in
+              docs/*|apps/mobile/*|README.md|LICENSE|.gitignore) ;;
+              apps/api/*) api=yes ;;
+              apps/web/*) web=yes ;;
+              *)          all=yes ;;
+            esac
+          done <<< "$changed"
+
+          if [ "$all" = yes ] || { [ "$api" = yes ] && [ "$web" = yes ]; }; then
+            only=""
+          elif [ "$api" = yes ]; then
+            # services.json order is preserved by deploy.sh, so api still
+            # carries the migrations ahead of the rest.
+            only="api,worker,scheduler,reverb"
+          elif [ "$web" = yes ]; then
+            only="web"
+          else
+            echo "::notice::Nothing under apps/ changed — no Railway service needs this commit."
+            echo "deploy=no" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Deploying: ${only:-every service}"
+          echo "only=$only" >> "$GITHUB_OUTPUT"
+          echo "deploy=yes" >> "$GITHUB_OUTPUT"
+
       # A missing token is the likeliest setup mistake, and "empty" looks the
       # same whether the secret is misnamed, stored as a variable, or scoped to
       # an environment this job does not request. Report which, without ever
       # printing a value.
       - name: Check credentials
+        if: steps.select.outputs.deploy == 'yes'
         env:
           TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           ALT_API: ${{ secrets.RAILWAY_API_TOKEN }}
@@ -77,9 +146,10 @@ jobs:
           exit 1
 
       - name: Deploy
+        if: steps.select.outputs.deploy == 'yes'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_ENVIRONMENT_ID: ${{ vars.RAILWAY_ENVIRONMENT_ID }}
           COMMIT_SHA: ${{ steps.commit.outputs.sha }}
-          ONLY: ${{ github.event.inputs.services }}
+          ONLY: ${{ steps.select.outputs.only }}
         run: ./infrastructure/railway/deploy.sh
