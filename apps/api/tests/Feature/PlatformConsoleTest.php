@@ -191,4 +191,34 @@ class PlatformConsoleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.is_platform_owner', true);
     }
+
+    public function test_the_console_still_opens_when_the_owners_own_trial_has_lapsed(): void
+    {
+        $this->seedCatalog();
+        $home = $this->createTenant('go3net', 'Go3net');
+        $customer = $this->createTenant('acme', 'Acme Ltd');
+        $customer->update(['status' => 'trial', 'trial_ends_at' => now()->subDays(30)]);
+
+        // The workspace the owner signs in through has lapsed as well.
+        $home->update(['status' => 'trial', 'trial_ends_at' => now()->subDays(30)]);
+        $owner = $this->createUserWithRole($home, 'super_admin', ['is_platform_owner' => true]);
+
+        // Gating the console on a live subscription locks the one door that
+        // can reopen the others: the owner could not extend anybody's trial,
+        // including their own, once theirs ran out.
+        $this->actingAsTenantUser($owner)
+            ->getJson('/api/v1/platform/summary')
+            ->assertOk();
+
+        $this->actingAsTenantUser($owner)
+            ->patchJson("/api/v1/platform/workspaces/{$customer->public_id}", ['extend_trial_days' => 30])
+            ->assertOk();
+
+        $this->assertTrue($customer->fresh()->trial_ends_at->isFuture());
+
+        // The lock still holds everywhere else in the lapsed workspace.
+        $this->actingAsTenantUser($owner)
+            ->getJson('/api/v1/hr/employees')
+            ->assertStatus(402);
+    }
 }

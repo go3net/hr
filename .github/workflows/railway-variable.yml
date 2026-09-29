@@ -1,6 +1,9 @@
 name: Railway Variable
 
-# Set one environment variable on one Railway service and redeploy it.
+# Set one environment variable on one Railway service.
+#
+# Railway restarts the service on a variable change, so the value goes live
+# without a deploy from here.
 #
 # The Railway dashboard is the normal place for this. This exists because the
 # project token lives here as a secret, so a variable can be set from the same
@@ -25,9 +28,9 @@ on:
         description: "Value — NOT a secret, this is recorded in the run log"
         required: true
       redeploy:
-        description: "Redeploy the service so it picks the value up"
+        description: "Force a deploy too (usually unnecessary — races Railway's own restart)"
         required: false
-        default: true
+        default: false
         type: boolean
 
 concurrency:

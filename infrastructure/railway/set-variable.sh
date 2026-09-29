@@ -7,8 +7,8 @@
 # the feature — so the value is set by the same run that deploys the code
 # rather than by hand afterwards, when it is easy to forget.
 #
-# The variable takes effect on the next deploy, so this redeploys the service
-# unless REDEPLOY=0.
+# Railway restarts the service when a variable changes, so the value goes live
+# on its own. Set REDEPLOY=1 to force a deploy as well.
 #
 # Usage:
 #   RAILWAY_TOKEN=... ./infrastructure/railway/set-variable.sh api PLATFORM_OWNER_EMAILS you@example.com
@@ -27,7 +27,7 @@ CONFIG="$HERE/services.json"
 SERVICE_NAME="${1:?service name is required (api, worker, scheduler, reverb, web)}"
 VAR_NAME="${2:?variable name is required}"
 VAR_VALUE="${3-}"
-REDEPLOY="${REDEPLOY:-1}"
+REDEPLOY="${REDEPLOY:-0}"
 
 read -r PROJECT_ID ENVIRONMENT_ID SERVICE_ID <<<"$(python3 -c "
 import json, sys
@@ -76,7 +76,14 @@ if body.get('errors'):
 print('✓ variable set')
 " "$response"
 
+# Railway restarts the service itself when a variable changes, so the value is
+# live without any help from us. Triggering our own deploy on top of that races
+# the restart: whichever one Railway keeps supersedes the other, the loser ends
+# as REMOVED, and the script reports a failure for work that actually
+# succeeded. Off by default for that reason — REDEPLOY=1 forces one anyway.
 if [ "$REDEPLOY" = "1" ]; then
-  echo "→ redeploying $SERVICE_NAME so it picks the value up"
+  echo "→ forcing a redeploy of $SERVICE_NAME (may race Railway's own restart)"
   ONLY="$SERVICE_NAME" "$HERE/deploy.sh"
+else
+  echo "→ Railway restarts $SERVICE_NAME on its own to pick the value up"
 fi

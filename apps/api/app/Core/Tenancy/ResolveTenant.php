@@ -45,8 +45,21 @@ class ResolveTenant
             // An expired trial or lapsed subscription locks the workspace,
             // but auth, profile and billing stay reachable so an admin can
             // sign in and pay.
+            //
+            // The platform console is exempt too. It is how Go3net extends a
+            // trial or moves a workspace onto a plan, so gating it behind a
+            // live subscription locks the only door that can reopen the
+            // others — and it reads across tenants anyway, so this workspace's
+            // billing has no bearing on it.
             if ($tenant->subscriptionState() === 'expired'
-                && ! $request->is('api/v1/auth/*', 'api/v1/me', 'api/v1/me/*', 'api/v1/billing', 'api/v1/billing/*')) {
+                && ! $request->is(
+                    'api/v1/auth/*',
+                    'api/v1/me',
+                    'api/v1/me/*',
+                    'api/v1/billing',
+                    'api/v1/billing/*',
+                    'api/v1/platform/*',
+                )) {
                 return response()->json([
                     'error' => [
                         'code' => 'SUBSCRIPTION_EXPIRED',
