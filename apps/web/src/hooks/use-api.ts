@@ -2101,6 +2101,20 @@ export function useInviteEmployee() {
   });
 }
 
+/**
+ * Start a reset for someone who has locked themselves out. Returns the link
+ * so it can be handed over directly when mail is not configured — the admin
+ * never sees or sets the password itself.
+ */
+export function useResetEmployeePassword() {
+  return useMutation({
+    mutationFn: (publicId: string) =>
+      post<{ email: string; reset_url: string }>(
+        `/hr/employees/${publicId}/password-reset`,
+      ).then((r) => r.data),
+  });
+}
+
 /* ── Self-service profile & my team ────────────────────────────── */
 
 export type ProfileContact = {

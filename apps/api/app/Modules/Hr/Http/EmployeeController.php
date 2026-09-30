@@ -3,12 +3,14 @@
 namespace App\Modules\Hr\Http;
 
 use App\Core\Http\ApiController;
+use App\Core\Notifications\PasswordReset as PasswordResetNotification;
 use App\Models\AuditLog;
 use App\Models\Employee;
 use App\Models\EmploymentEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 
 class EmployeeController extends ApiController
 {
@@ -97,6 +99,50 @@ class EmployeeController extends ApiController
             'email' => $result['user']->email,
             // Share this directly (WhatsApp/Slack) when SMTP isn't set up yet.
             'setup_url' => $result['setup_url'],
+        ]);
+    }
+
+    /**
+     * Start a password reset on someone's behalf.
+     *
+     * Staff lock themselves out and cannot always receive the self-service
+     * email — the workspace may have no SMTP yet, or the address may be one
+     * they cannot reach from the shop floor. This issues the same
+     * single-use, short-lived link the "forgot password" flow does, mails
+     * it, and hands it back so an admin can pass it on directly.
+     *
+     * The admin never sees or sets the password: the employee chooses it
+     * when they open the link, and consuming it signs out their other
+     * sessions.
+     */
+    public function resetPassword(Request $request, Employee $employee): JsonResponse
+    {
+        $this->requirePermission('hr.employees.manage');
+
+        $user = $employee->user;
+
+        abort_if(! $user, 422, 'This employee has no account yet — invite them instead.');
+        abort_if($user->status === 'disabled', 422, 'This account is disabled.');
+        abort_if(
+            $user->status !== 'active',
+            422,
+            'This employee has not accepted their invitation yet — resend the invite instead.',
+        );
+
+        // The broker stores a hashed token, applies the expiry from auth.php
+        // and throttles repeats, so the link is no weaker than the one the
+        // employee would have requested for themselves.
+        $token = Password::createToken($user);
+        $user->notify(new PasswordResetNotification($token));
+
+        AuditLog::record('auth.password_reset_started', $user, ['by' => $request->user()->email]);
+
+        return $this->respond([
+            'email' => $user->email,
+            // Share directly when SMTP is not set up yet, exactly as with invites.
+            'reset_url' => rtrim(config('app.frontend_url', config('app.url')), '/')
+                .'/reset-password?token='.urlencode($token)
+                .'&email='.urlencode($user->email),
         ]);
     }
 

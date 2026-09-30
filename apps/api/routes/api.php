@@ -142,6 +142,8 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/employees', [EmployeeController::class, 'index']);
             Route::post('/employees', [EmployeeController::class, 'store']);
             Route::post('/employees/{employee:public_id}/invite', [EmployeeController::class, 'sendInvite']);
+            Route::post('/employees/{employee:public_id}/password-reset', [EmployeeController::class, 'resetPassword'])
+                ->middleware('throttle:10,1');
             Route::get('/employees/{employee:public_id}', [EmployeeController::class, 'show']);
             Route::patch('/employees/{employee:public_id}', [EmployeeController::class, 'update']);
             Route::post('/employees/{employee:public_id}/terminate', [EmployeeController::class, 'terminate']);

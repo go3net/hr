@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Search, Loader2, Pencil, Eye, Send, UsersRound } from "lucide-react";
+import { Plus, Search, Loader2, Pencil, Eye, Send, KeyRound, UsersRound } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
   useEmployees,
   useWorkSchedules,
   useInviteEmployee,
+  useResetEmployeePassword,
   usePositions,
   useUpdateEmployee,
 } from "@/hooks/use-api";
@@ -424,13 +425,91 @@ function EmployeeProfileDialog({ employee, onDone }: { employee: EmployeeRow; on
   );
 }
 
-function AccountCell({ employee }: { employee: EmployeeRow }) {
-  const invite = useInviteEmployee();
-  const [setupUrl, setSetupUrl] = useState<string | null>(null);
+/** The link is the deliverable when mail is not configured — invite or reset. */
+function ShareLinkDialog({
+  title,
+  description,
+  url,
+  onClose,
+}: {
+  title: string;
+  description: string;
+  url: string;
+  onClose: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent title={title} description={description}>
+        <div className="space-y-3">
+          <div className="break-all rounded-[10px] border border-border bg-muted/40 p-3 font-mono text-[12px] text-foreground">
+            {url}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={async () => {
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+            >
+              {copied ? "Copied!" : "Copy link"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AccountCell({ employee }: { employee: EmployeeRow }) {
+  const invite = useInviteEmployee();
+  const reset = useResetEmployeePassword();
+  const [setupUrl, setSetupUrl] = useState<string | null>(null);
+  const [resetUrl, setResetUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // An active account is the one that can get locked out, so this is where
+  // "reset their password" belongs.
   if (employee.account_status === "active") {
-    return <Badge variant="success">Active</Badge>;
+    return (
+      <div className="flex items-center gap-1.5">
+        <Badge variant="success">Active</Badge>
+        {employee.status !== "exited" ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[11px]"
+            title="Send them a link to choose a new password"
+            disabled={reset.isPending}
+            onClick={() => {
+              setError(null);
+              reset.mutate(employee.id, {
+                onSuccess: (res) => setResetUrl(res.reset_url),
+                onError: (err) =>
+                  setError(err instanceof ApiError ? err.message : "Could not start a reset."),
+              });
+            }}
+          >
+            {reset.isPending ? <Loader2 className="size-3 animate-spin" /> : <KeyRound className="size-3" />}
+            Reset password
+          </Button>
+        ) : null}
+
+        {error ? <span className="text-[11px] text-danger">{error}</span> : null}
+
+        {resetUrl ? (
+          <ShareLinkDialog
+            title={`Reset ${employee.name}'s password`}
+            description="A reset email has been queued — you can also share this link directly. It expires in 60 minutes, can be used once, and they choose the new password themselves."
+            url={resetUrl}
+            onClose={() => setResetUrl(null)}
+          />
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -450,30 +529,12 @@ function AccountCell({ employee }: { employee: EmployeeRow }) {
       ) : null}
 
       {setupUrl ? (
-        <Dialog open onOpenChange={(open) => { if (!open) { setSetupUrl(null); setCopied(false); } }}>
-          <DialogContent
-            title={`Invite ${employee.name}`}
-            description="The invitation email has been queued — you can also share this setup link directly (WhatsApp, chat). It's single-use and valid for 7 days."
-          >
-            <div className="space-y-3">
-              <div className="break-all rounded-[10px] border border-border bg-muted/40 p-3 font-mono text-[12px] text-foreground">
-                {setupUrl}
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(setupUrl);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 1500);
-                  }}
-                >
-                  {copied ? "Copied!" : "Copy link"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ShareLinkDialog
+          title={`Invite ${employee.name}`}
+          description="The invitation email has been queued — you can also share this setup link directly (WhatsApp, chat). It's single-use and valid for 7 days."
+          url={setupUrl}
+          onClose={() => setSetupUrl(null)}
+        />
       ) : null}
     </div>
   );
