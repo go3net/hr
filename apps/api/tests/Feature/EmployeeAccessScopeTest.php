@@ -183,4 +183,52 @@ class EmployeeAccessScopeTest extends TestCase
                 ->assertForbidden();
         }
     }
+
+    public function test_the_full_profile_returns_everything_hr_needs_to_read(): void
+    {
+        $this->seedCatalog();
+        $tenant = $this->createTenant();
+        $hr = $this->createUserWithRole($tenant, 'hr_manager');
+
+        $employee = \App\Models\Employee::create([
+            'tenant_id' => $tenant->id,
+            'employee_code' => 'E-900',
+            'first_name' => 'Tunde',
+            'last_name' => 'Bakare',
+            'hire_date' => now()->subYear(),
+            'status' => 'active',
+            'base_salary' => 450_000,
+            'allowances' => ['housing' => 120_000, 'transport' => 60_000],
+            'bank_name' => 'GTBank',
+            'medical_notes' => 'Asthmatic',
+        ]);
+
+        \App\Models\EmergencyContact::create([
+            'tenant_id' => $tenant->id,
+            'employee_id' => $employee->id,
+            'name' => 'Ngozi Bakare',
+            'relationship' => 'Spouse',
+            'phone' => '08025551212',
+        ]);
+
+        \App\Models\EmploymentEvent::create([
+            'tenant_id' => $tenant->id,
+            'employee_id' => $employee->id,
+            'type' => 'joined',
+            'title' => 'Joined as Backend Engineer',
+            'occurred_on' => now()->subYear()->toDateString(),
+        ]);
+
+        // The profile page reads every one of these; a field that stops being
+        // returned would quietly render as a dash rather than fail.
+        $this->actingAsTenantUser($hr)
+            ->getJson("/api/v1/hr/employees/{$employee->public_id}")
+            ->assertOk()
+            ->assertJsonPath('data.base_salary', '450000.00')
+            ->assertJsonPath('data.allowances.housing', 120_000)
+            ->assertJsonPath('data.bank_name', 'GTBank')
+            ->assertJsonPath('data.medical_notes', 'Asthmatic')
+            ->assertJsonPath('data.emergency_contacts.0.name', 'Ngozi Bakare')
+            ->assertJsonPath('data.history.0.title', 'Joined as Backend Engineer');
+    }
 }

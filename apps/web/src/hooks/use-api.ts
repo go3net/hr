@@ -343,8 +343,17 @@ export type EmployeeDetail = EmployeeRow & {
   bank_name?: string | null;
   bank_account_number?: string | null;
   pension_pin?: string | null;
+  medical_notes?: string | null;
   emergency_contacts?: { id: number; name: string; relationship: string; phone: string; address?: string | null }[];
   guarantors?: { id: number; name: string; occupation: string; phone: string; address?: string | null }[];
+  /** Joining, promotions, exits — already returned, never previously shown. */
+  history?: {
+    id: number;
+    type: string;
+    title?: string | null;
+    notes?: string | null;
+    occurred_on: string | null;
+  }[];
 };
 
 export function useEmployeeDetail(publicId: string | null) {

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -382,49 +384,6 @@ function EditEmployeeDialog({ employee, onDone }: { employee: EmployeeRow; onDon
   );
 }
 
-function EmployeeProfileDialog({ employee, onDone }: { employee: EmployeeRow; onDone: () => void }) {
-  const { data: detail, isPending } = useEmployeeDetail(employee.id);
-  const { data: session } = useBootstrap();
-  const canSeeSensitive = (session?.permissions ?? []).some((permission) => permission === "*" || permission === "hr.employees.view_sensitive");
-  const field = (label: string, value: string | number | null | undefined) => (
-    <div><p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-0.5 text-sm">{value || "—"}</p></div>
-  );
-
-  return (
-    <Dialog open onOpenChange={(open) => !open && onDone()}>
-      <DialogContent title={employee.name} description={`Employee profile · ${employee.employee_code}`}>
-        {isPending || !detail ? <Skeleton className="h-72 w-full" /> : (
-          <div className="max-h-[70vh] space-y-6 overflow-y-auto pr-1">
-            <section className="grid grid-cols-2 gap-4">
-              {field("Work email", detail.email)}{field("Phone", detail.phone)}
-              {field("Date of birth", detail.date_of_birth ? formatDate(detail.date_of_birth) : null)}{field("Gender", detail.gender)}
-              {field("Marital status", detail.marital_status)}{field("Address", detail.address)}
-              {field("Department", detail.department)}{field("Position", detail.position)}
-              {field("Employment type", typeLabels[detail.employment_type] ?? detail.employment_type)}{field("Hired", detail.hired_at ? formatDate(detail.hired_at) : null)}
-            </section>
-
-            <section className="space-y-2 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold">Emergency contacts</h3>
-              {detail.emergency_contacts?.length ? detail.emergency_contacts.map((contact) => (
-                <div key={contact.id} className="rounded-lg bg-muted/40 p-3 text-sm"><p className="font-medium">{contact.name} · {contact.relationship}</p><p className="text-muted-foreground">{contact.phone}{contact.address ? ` · ${contact.address}` : ""}</p></div>
-              )) : <p className="text-sm text-muted-foreground">No emergency contacts submitted.</p>}
-            </section>
-
-            <section className="space-y-2 border-t border-border pt-4">
-              <h3 className="text-sm font-semibold">Guarantors</h3>
-              {detail.guarantors?.length ? detail.guarantors.map((guarantor) => (
-                <div key={guarantor.id} className="rounded-lg bg-muted/40 p-3 text-sm"><p className="font-medium">{guarantor.name} · {guarantor.occupation}</p><p className="text-muted-foreground">{guarantor.phone}{guarantor.address ? ` · ${guarantor.address}` : ""}</p></div>
-              )) : <p className="text-sm text-muted-foreground">No guarantors submitted.</p>}
-            </section>
-
-            {canSeeSensitive && <section className="space-y-3 border-t border-border pt-4"><h3 className="text-sm font-semibold">Payroll and statutory details</h3><div className="grid grid-cols-2 gap-4">{field("Basic salary", detail.base_salary != null ? `₦${Number(detail.base_salary).toLocaleString()}` : null)}{field("Bank", detail.bank_name)}{field("Account number", detail.bank_account_number)}{field("Pension PIN", detail.pension_pin)}{field("NIN", detail.nin)}{field("BVN", detail.bvn)}</div></section>}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 /** The link is the deliverable when mail is not configured — invite or reset. */
 function ShareLinkDialog({
   title,
@@ -543,8 +502,18 @@ function AccountCell({ employee }: { employee: EmployeeRow }) {
 export function EmployeesClient() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
-  const [viewing, setViewing] = useState<EmployeeRow | null>(null);
   const { data: employees, isPending, isError } = useEmployees(search);
+
+  // "Edit" on someone's profile page sends them here with the id attached, so
+  // the dialog opens on the person they were already looking at rather than
+  // dropping them in a list to find them again.
+  const requestedEdit = useSearchParams().get("edit");
+  const [openedFor, setOpenedFor] = useState<string | null>(null);
+  if (requestedEdit && requestedEdit !== openedFor && employees) {
+    const match = employees.find((e) => e.id === requestedEdit);
+    setOpenedFor(requestedEdit);
+    if (match) setEditing(match);
+  }
 
   return (
     <div className="space-y-5">
@@ -616,7 +585,14 @@ export function EmployeesClient() {
                     {e.hired_at ? formatDate(e.hired_at) : "—"}
                   </td>
                   <td className="px-4 py-2.5">
-                    <div className="flex items-center"><Button variant="ghost" size="icon" aria-label={`View ${e.name}`} onClick={() => setViewing(e)}><Eye className="size-4" /></Button><Button variant="ghost" size="icon" aria-label={`Edit ${e.name}`} onClick={() => setEditing(e)}><Pencil className="size-4" /></Button></div>
+                    {/* Viewing opens the full record on its own page — the
+                        dialog had room for a fraction of it. */}
+                    <div className="flex items-center">
+                      <Button asChild variant="ghost" size="icon" aria-label={`View ${e.name}`}>
+                        <Link href={`/hr/employees/${e.id}`}><Eye className="size-4" /></Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" aria-label={`Edit ${e.name}`} onClick={() => setEditing(e)}><Pencil className="size-4" /></Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -652,7 +628,6 @@ export function EmployeesClient() {
       </Card>
 
       {editing ? <EditEmployeeDialog employee={editing} onDone={() => setEditing(null)} /> : null}
-      {viewing ? <EmployeeProfileDialog employee={viewing} onDone={() => setViewing(null)} /> : null}
     </div>
   );
 }
