@@ -73,4 +73,87 @@ class PasswordResetTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('token');
     }
+
+    public function test_an_admin_can_start_a_reset_for_a_locked_out_employee(): void
+    {
+        $this->seedCatalog();
+        $tenant = $this->createTenant();
+        $hr = $this->createUserWithRole($tenant, 'hr_manager');
+        $staff = $this->createUserWithRole($tenant, 'employee', ['email' => 'locked.out@example.test']);
+
+        $employee = \App\Models\Employee::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $staff->id,
+            'employee_code' => 'E-77',
+            'first_name' => 'Locked',
+            'last_name' => 'Out',
+            'email' => $staff->email,
+            'hire_date' => now()->subYear(),
+            'status' => 'active',
+        ]);
+
+        Notification::fake();
+
+        $body = $this->actingAsTenantUser($hr)
+            ->postJson("/api/v1/hr/employees/{$employee->public_id}/password-reset")
+            ->assertOk()
+            ->json('data');
+
+        $this->assertSame($staff->email, $body['email']);
+        Notification::assertSentTo($staff, PasswordReset::class);
+
+        // The admin never sets the password — they pass on a link the employee
+        // uses to choose their own, so the returned URL has to actually work.
+        parse_str(parse_url($body['reset_url'], PHP_URL_QUERY) ?? '', $query);
+        $this->assertSame($staff->email, $query['email']);
+
+        $this->withHeader('X-Tenant', $tenant->subdomain)
+            ->postJson('/api/v1/auth/reset-password', [
+                'email' => $staff->email,
+                'token' => $query['token'],
+                'password' => 'brand-new-pass-99',
+                'password_confirmation' => 'brand-new-pass-99',
+            ])
+            ->assertOk();
+
+        $this->assertTrue(Hash::check('brand-new-pass-99', $staff->fresh()->password));
+    }
+
+    public function test_starting_a_reset_needs_the_permission_and_a_usable_account(): void
+    {
+        $this->seedCatalog();
+        $tenant = $this->createTenant();
+        $hr = $this->createUserWithRole($tenant, 'hr_manager');
+        $nosy = $this->createUserWithRole($tenant, 'employee');
+
+        // Someone with no account yet should be invited, not reset.
+        $noAccount = \App\Models\Employee::create([
+            'tenant_id' => $tenant->id,
+            'employee_code' => 'E-78',
+            'first_name' => 'Not',
+            'last_name' => 'Invited',
+            'hire_date' => now(),
+            'status' => 'active',
+        ]);
+
+        $this->actingAsTenantUser($hr)
+            ->postJson("/api/v1/hr/employees/{$noAccount->public_id}/password-reset")
+            ->assertStatus(422);
+
+        // And staff cannot start one for a colleague.
+        $colleague = \App\Models\Employee::create([
+            'tenant_id' => $tenant->id,
+            'user_id' => $hr->id,
+            'employee_code' => 'E-79',
+            'first_name' => 'Hr',
+            'last_name' => 'Person',
+            'email' => $hr->email,
+            'hire_date' => now(),
+            'status' => 'active',
+        ]);
+
+        $this->actingAsTenantUser($nosy)
+            ->postJson("/api/v1/hr/employees/{$colleague->public_id}/password-reset")
+            ->assertForbidden();
+    }
 }
