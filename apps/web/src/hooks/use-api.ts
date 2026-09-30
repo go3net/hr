@@ -2390,3 +2390,75 @@ export function useSetMemberPassword() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", "access"] }),
   });
 }
+
+/* ── HR: paperwork held on a person ────────────────────────────── */
+
+export type EmployeeFile = {
+  id: number;
+  type: string;
+  type_label: string;
+  name: string;
+  mime: string | null;
+  size_bytes: number;
+  expires_on: string | null;
+  has_expired: boolean;
+  uploaded_by: string | null;
+  uploaded_at: string;
+};
+
+export const EMPLOYEE_FILE_TYPES: { value: string; label: string }[] = [
+  { value: "id_card", label: "ID card" },
+  { value: "passport_photo", label: "Passport photograph" },
+  { value: "certificate", label: "Certificate" },
+  { value: "cv", label: "CV / résumé" },
+  { value: "contract", label: "Signed contract" },
+  { value: "reference", label: "Reference letter" },
+  { value: "medical", label: "Medical report" },
+  { value: "other", label: "Other" },
+];
+
+export function useEmployeeFiles(publicId: string) {
+  return useQuery({
+    queryKey: ["employees", publicId, "documents"],
+    queryFn: () => get<EmployeeFile[]>(`/hr/employees/${publicId}/documents`).then((r) => r.data),
+  });
+}
+
+export function useUploadEmployeeFile(publicId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    // Multipart, so this goes through fetch rather than the JSON helper —
+    // the browser has to set its own boundary on the content type.
+    mutationFn: async ({ file, type, expiresOn }: { file: File; type: string; expiresOn?: string }) => {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("type", type);
+      if (expiresOn) form.append("expires_on", expiresOn);
+
+      const res = await fetch(`/api/backend/hr/employees/${publicId}/documents`, {
+        method: "POST",
+        body: form,
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        const fields = json?.errors as Record<string, string[]> | undefined;
+        throw new ApiError(
+          res.status,
+          json?.error?.code ?? "UPLOAD_FAILED",
+          json?.error?.message ?? (fields ? Object.values(fields)[0]?.[0] : undefined) ?? "Upload failed.",
+        );
+      }
+      return json.data as EmployeeFile;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees", publicId, "documents"] }),
+  });
+}
+
+export function useDeleteEmployeeFile(publicId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => destroy(`/hr/employees/${publicId}/documents/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees", publicId, "documents"] }),
+  });
+}

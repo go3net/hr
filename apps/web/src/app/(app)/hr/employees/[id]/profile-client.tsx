@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBootstrap, useEmployeeDetail } from "@/hooks/use-api";
+import { DocumentsSection } from "./documents-section";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -246,6 +247,8 @@ export function EmployeeProfile({ id }: { id: string }) {
             </p>
           </Section>
         )}
+
+        <DocumentsSection publicId={id} employeeName={e.name} canManage={canEdit} />
 
         <Section title="History" hint="Joining, changes and exits recorded against this record.">
           {e.history?.length ? (
