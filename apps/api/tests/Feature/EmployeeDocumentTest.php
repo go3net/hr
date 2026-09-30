@@ -161,4 +161,34 @@ class EmployeeDocumentTest extends TestCase
         // A permit that lapsed last month is the thing you need to spot.
         $this->assertTrue($document['has_expired']);
     }
+
+    public function test_a_file_lost_from_storage_says_so_instead_of_failing(): void
+    {
+        Storage::fake();
+        [, $hr, , $staff] = $this->setUpPeople();
+
+        $document = $this->actingAsTenantUser($hr)
+            ->postJson("/api/v1/hr/employees/{$staff->public_id}/documents", [
+                'file' => UploadedFile::fake()->create('id.pdf', 30, 'application/pdf'),
+                'type' => 'id_card',
+            ])
+            ->assertCreated()
+            ->json('data');
+
+        // A host with no persistent storage loses the disk on every deploy
+        // while the row survives. Confirmed on production: the download
+        // answered 500, which reads like the whole app is broken.
+        Storage::delete(\App\Models\EmployeeDocument::withoutGlobalScopes()->find($document['id'])->path);
+
+        $this->actingAsTenantUser($hr)
+            ->getJson("/api/v1/hr/employees/{$staff->public_id}/documents/{$document['id']}/download")
+            ->assertStatus(410)
+            ->assertSee('no longer in storage', false);
+
+        // The row stays listed, so it is visible that something was expected.
+        $this->actingAsTenantUser($hr)
+            ->getJson("/api/v1/hr/employees/{$staff->public_id}/documents")
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+    }
 }
