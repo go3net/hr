@@ -21,6 +21,7 @@ use App\Modules\Helpdesk\Http\HelpdeskController;
 use App\Modules\Hr\Http\AttendanceController;
 use App\Modules\Hr\Http\DepartmentController;
 use App\Modules\Hr\Http\EmployeeController;
+use App\Modules\Hr\Http\EmployeeDocumentController;
 use App\Modules\Hr\Http\LeaveController;
 use App\Modules\Hr\Http\LifecycleController;
 use App\Modules\Hr\Http\MyProfileController;
@@ -155,6 +156,12 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/employees/{employee:public_id}', [EmployeeController::class, 'show']);
             Route::patch('/employees/{employee:public_id}', [EmployeeController::class, 'update']);
             Route::post('/employees/{employee:public_id}/terminate', [EmployeeController::class, 'terminate']);
+
+            // Paperwork held on a person: ID card, certificates, contract.
+            Route::get('/employees/{employee:public_id}/documents', [EmployeeDocumentController::class, 'index']);
+            Route::post('/employees/{employee:public_id}/documents', [EmployeeDocumentController::class, 'store']);
+            Route::get('/employees/{employee:public_id}/documents/{document}/download', [EmployeeDocumentController::class, 'download']);
+            Route::delete('/employees/{employee:public_id}/documents/{document}', [EmployeeDocumentController::class, 'destroy']);
             Route::delete('/employees/{employee:public_id}', [EmployeeController::class, 'destroy']);
 
             Route::apiResource('departments', DepartmentController::class)->except(['show']);
