@@ -2341,3 +2341,43 @@ export function useDeleteWorkspace() {
     },
   });
 }
+
+/* ── Settings: account access ──────────────────────────────────── */
+
+export type AccessRow = {
+  id: number;
+  name: string;
+  email: string;
+  status: "active" | "invited" | "disabled" | null;
+  employee_code: string | null;
+  roles: string[];
+  last_login_at: string | null;
+  can_manage: boolean;
+  is_self: boolean;
+};
+
+export function useAccountAccess() {
+  return useQuery({
+    queryKey: ["settings", "access"],
+    queryFn: () => get<AccessRow[]>("/settings/access").then((r) => r.data),
+  });
+}
+
+export function useIssueResetLink() {
+  return useMutation({
+    mutationFn: (id: number) =>
+      post<{ email: string; reset_url: string }>(`/settings/access/${id}/reset-link`).then((r) => r.data),
+  });
+}
+
+export function useSetMemberPassword() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, password }: { id: number; password: string }) =>
+      post<{ email: string; status: string }>(`/settings/access/${id}/password`, {
+        password,
+        password_confirmation: password,
+      }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings", "access"] }),
+  });
+}

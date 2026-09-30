@@ -28,6 +28,7 @@ import {
   Calendar,
   Sparkles,
   ShieldCheck,
+  KeyRound,
   Palette,
   CreditCard,
   Globe2,
@@ -122,6 +123,12 @@ export const NAV: NavGroup[] = [
   {
     label: "Administration",
     items: [
+      {
+        href: "/settings/access",
+        icon: KeyRound,
+        name: "Staff access",
+        permission: "hr.employees.manage",
+      },
       {
         href: "/settings/roles",
         icon: ShieldCheck,

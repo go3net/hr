@@ -129,6 +129,18 @@ class EmployeeController extends ApiController
             'This employee has not accepted their invitation yet — resend the invite instead.',
         );
 
+        // Handing over a reset link hands over the account, so managing
+        // employees must not be a route into an account that administers the
+        // workspace — otherwise HR could reset the owner and sign in as them.
+        $actor = $request->user();
+        abort_if(
+            ! $actor->hasRole('super_admin')
+                && ! $actor->hasPermission('settings.roles.manage')
+                && ($user->hasRole('super_admin') || $user->hasPermission('settings.roles.manage')),
+            403,
+            'Only a workspace administrator can reset an administrator account.',
+        );
+
         // The broker stores a hashed token, applies the expiry from auth.php
         // and throttles repeats, so the link is no weaker than the one the
         // employee would have requested for themselves.

@@ -35,6 +35,7 @@ use App\Modules\Knowledge\Http\KnowledgeController;
 use App\Modules\Lms\Http\LmsController;
 use App\Modules\Platform\Http\PlatformController;
 use App\Modules\Projects\Http\ProjectController;
+use App\Modules\Settings\Http\AccountAccessController;
 use App\Modules\Settings\Http\BrandingController;
 use App\Modules\Settings\Http\RoleController;
 use App\Modules\Tasks\Http\TaskController;
@@ -113,6 +114,13 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
         Route::get('/settings/permissions', [RoleController::class, 'permissions']);
         Route::get('/settings/users', [RoleController::class, 'users']);
         Route::patch('/settings/users/{member}/roles', [RoleController::class, 'assign']);
+
+        // Getting people back into their accounts, without relying on mail.
+        Route::get('/settings/access', [AccountAccessController::class, 'index']);
+        Route::post('/settings/access/{member}/reset-link', [AccountAccessController::class, 'resetLink'])
+            ->middleware('throttle:20,1');
+        Route::post('/settings/access/{member}/password', [AccountAccessController::class, 'setPassword'])
+            ->middleware('throttle:20,1');
 
         Route::get('/modules', [ModuleController::class, 'index']);
         Route::patch('/modules/{key}', [ModuleController::class, 'update']);
