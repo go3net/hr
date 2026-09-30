@@ -18,7 +18,9 @@ async function proxy(request: NextRequest, path: string[]): Promise<NextResponse
   const search = request.nextUrl.search;
   const target = `/${path.join("/")}${search}`;
 
-  const hasBody = request.method !== "GET" && request.method !== "DELETE";
+  // DELETE may carry a body — a typed confirmation, for instance, which has
+  // no business in the URL where it would be logged. Only GET never does.
+  const hasBody = request.method !== "GET";
   // Buffer the raw body so multipart uploads (documents) pass through
   // intact; the incoming content-type (with its boundary) is preserved.
   const body = hasBody ? Buffer.from(await request.arrayBuffer()) : undefined;

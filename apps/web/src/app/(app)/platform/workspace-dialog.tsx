@@ -1,13 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, Loader2, Mail, PauseCircle, PlayCircle } from "lucide-react";
+import { CalendarClock, Loader2, Mail, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/input";
+import { Input, Label } from "@/components/ui/input";
 import { Dialog, DialogContent, Select } from "@/components/ui/dialog";
-import { useUpdateWorkspace, useWorkspace, type WorkspaceRow } from "@/hooks/use-api";
+import {
+  useDeleteWorkspace,
+  useUpdateWorkspace,
+  useWorkspace,
+  type WorkspaceRow,
+} from "@/hooks/use-api";
 import { ApiError } from "@/lib/api";
 import { STATUS_BADGE, naira } from "./shared";
 
@@ -28,8 +33,11 @@ const EXTENSIONS = [7, 14, 30];
 export function WorkspaceDialog({ row, onDone }: { row: WorkspaceRow; onDone: () => void }) {
   const { data: detail, isPending } = useWorkspace(row.id);
   const update = useUpdateWorkspace();
+  const remove = useDeleteWorkspace();
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState(row.plan_key ?? "");
+  const [confirming, setConfirming] = useState(false);
+  const [confirm, setConfirm] = useState("");
 
   const workspace = detail ?? row;
   const suspended = workspace.status === "suspended" || workspace.status === "cancelled";
@@ -158,6 +166,74 @@ export function WorkspaceDialog({ row, onDone }: { row: WorkspaceRow; onDone: ()
               {suspended ? "Reactivate" : "Suspend"}
             </Button>
           </div>
+
+          {/* Abandoned signups and smoke tests otherwise sit in the list for
+              good. Hidden behind a click, and then behind typing the
+              subdomain, because nothing here can be undone. */}
+          {workspace.paid_total > 0 ? null : (
+            <div className="space-y-3 rounded-[12px] border border-danger/30 p-3">
+              <p className="text-[13px] font-semibold text-danger">Danger zone</p>
+              {!confirming ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[13px] text-muted-foreground">
+                    Erase this workspace and everything in it.
+                  </p>
+                  <Button type="button" size="sm" variant="ghost" className="text-danger"
+                    onClick={() => setConfirming(true)}>
+                    <Trash2 className="size-4" />
+                    Delete
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-[13px] text-muted-foreground">
+                    This removes {workspace.name} for good — its {workspace.members_count} sign-in
+                    {workspace.members_count === 1 ? "" : "s"}, {workspace.headcount} staff record
+                    {workspace.headcount === 1 ? "" : "s"} and everything else. If they may come
+                    back, suspend them instead.
+                  </p>
+                  <div className="grid gap-2">
+                    <Label htmlFor="w-confirm">
+                      Type <span className="font-medium text-foreground">{workspace.subdomain}</span> to confirm
+                    </Label>
+                    <Input
+                      id="w-confirm"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      placeholder={workspace.subdomain}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" className="flex-1"
+                      onClick={() => { setConfirming(false); setConfirm(""); }}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="flex-1"
+                      disabled={remove.isPending || confirm.trim() !== workspace.subdomain}
+                      onClick={() => {
+                        setError(null);
+                        remove.mutate(
+                          { id: row.id, confirm: confirm.trim() },
+                          {
+                            onSuccess: onDone,
+                            onError: (err) =>
+                              setError(err instanceof ApiError ? err.message : "Could not delete this workspace."),
+                          },
+                        );
+                      }}
+                    >
+                      {remove.isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                      Delete for good
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {detail?.payments?.length ? (
             <div>

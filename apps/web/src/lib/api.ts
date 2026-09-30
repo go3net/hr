@@ -59,4 +59,6 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 export const get = <T>(path: string) => api<T>(path);
 export const post = <T>(path: string, body?: unknown) => api<T>(path, { method: "POST", body });
 export const patch = <T>(path: string, body?: unknown) => api<T>(path, { method: "PATCH", body });
-export const destroy = <T>(path: string) => api<T>(path, { method: "DELETE" });
+// A body is unusual on DELETE but the right place for a typed confirmation,
+// which has no business sitting in the URL where it would be logged.
+export const destroy = <T>(path: string, body?: unknown) => api<T>(path, { method: "DELETE", body });

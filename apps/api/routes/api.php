@@ -98,6 +98,7 @@ Route::prefix('v1')->middleware('tenant')->group(function () {
             Route::get('/workspaces', [PlatformController::class, 'index']);
             Route::get('/workspaces/{workspace}', [PlatformController::class, 'show']);
             Route::patch('/workspaces/{workspace}', [PlatformController::class, 'update']);
+            Route::delete('/workspaces/{workspace}', [PlatformController::class, 'destroy']);
         });
 
         // Workspace settings: branding + roles

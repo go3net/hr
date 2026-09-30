@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\BillingPayment;
 use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\InteractsWithTenancy;
 use Tests\TestCase;
@@ -220,5 +221,95 @@ class PlatformConsoleTest extends TestCase
         $this->actingAsTenantUser($owner)
             ->getJson('/api/v1/hr/employees')
             ->assertStatus(402);
+    }
+
+    public function test_a_workspace_can_be_erased_and_takes_its_data_with_it(): void
+    {
+        $this->seedCatalog();
+        $home = $this->createTenant('go3net', 'Go3net');
+        $abandoned = $this->createTenant('smoke', 'Signup Smoke Ltd');
+
+        $staff = $this->createUserWithRole($abandoned, 'hr_manager');
+        Employee::withoutGlobalScopes()->create([
+            'tenant_id' => $abandoned->id,
+            'user_id' => $staff->id,
+            'employee_code' => 'SMK-001',
+            'first_name' => 'Test',
+            'last_name' => 'Person',
+            'hire_date' => now()->subMonth(),
+            'status' => 'active',
+        ]);
+
+        $owner = $this->createUserWithRole($home, 'super_admin', ['is_platform_owner' => true]);
+
+        // Naming the wrong subdomain must not erase anything.
+        $this->actingAsTenantUser($owner)
+            ->deleteJson("/api/v1/platform/workspaces/{$abandoned->public_id}", ['confirm' => 'wrong'])
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('tenants', ['id' => $abandoned->id]);
+
+        $this->actingAsTenantUser($owner)
+            ->deleteJson("/api/v1/platform/workspaces/{$abandoned->public_id}", ['confirm' => 'smoke'])
+            ->assertOk();
+
+        // The workspace and everything hanging off it goes, via the cascade.
+        $this->assertDatabaseMissing('tenants', ['id' => $abandoned->id]);
+        $this->assertSame(0, User::withoutGlobalScopes()->where('tenant_id', $abandoned->id)->count());
+        $this->assertSame(0, Employee::withoutGlobalScopes()->where('tenant_id', $abandoned->id)->count());
+
+        // The owner's own workspace is untouched, and the record of the
+        // erasure lives there rather than inside what was erased.
+        $this->assertDatabaseHas('tenants', ['id' => $home->id]);
+        $this->assertDatabaseHas('audit_logs', [
+            'tenant_id' => $home->id,
+            'action' => 'platform.workspace.deleted',
+        ]);
+    }
+
+    public function test_erasing_is_refused_for_your_own_workspace_and_for_anyone_who_has_paid(): void
+    {
+        $this->seedCatalog();
+        $home = $this->createTenant('go3net', 'Go3net');
+        $payer = $this->createTenant('acme', 'Acme Ltd');
+
+        $owner = $this->createUserWithRole($home, 'super_admin', ['is_platform_owner' => true]);
+
+        BillingPayment::withoutGlobalScopes()->create([
+            'tenant_id' => $payer->id,
+            'user_id' => $owner->id,
+            'plan_key' => 'growth',
+            'amount' => 50_000,
+            'reference' => 'g3n_paid_before',
+            'status' => 'paid',
+            'paid_at' => now()->subMonths(2),
+        ]);
+
+        // Money that changed hands stays on the books.
+        $this->actingAsTenantUser($owner)
+            ->deleteJson("/api/v1/platform/workspaces/{$payer->public_id}", ['confirm' => 'acme'])
+            ->assertStatus(422);
+
+        // And deleting the workspace you are signed in through would take your
+        // own account with it, mid-request.
+        $this->actingAsTenantUser($owner)
+            ->deleteJson("/api/v1/platform/workspaces/{$home->public_id}", ['confirm' => 'go3net'])
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('tenants', ['id' => $payer->id]);
+        $this->assertDatabaseHas('tenants', ['id' => $home->id]);
+    }
+
+    public function test_only_a_platform_owner_can_erase_a_workspace(): void
+    {
+        $this->seedCatalog();
+        $tenant = $this->createTenant('go3net', 'Go3net');
+        $other = $this->createTenant('acme', 'Acme Ltd');
+
+        $this->actingAsTenantUser($this->createUserWithRole($tenant, 'super_admin'))
+            ->deleteJson("/api/v1/platform/workspaces/{$other->public_id}", ['confirm' => 'acme'])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tenants', ['id' => $other->id]);
     }
 }
