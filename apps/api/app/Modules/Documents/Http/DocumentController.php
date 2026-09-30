@@ -91,6 +91,15 @@ class DocumentController extends ApiController
     {
         abort_unless($document->isAccessibleBy($request->user()), 404);
 
+        // Same exposure as employee paperwork: the row outlives the file when
+        // the host has no persistent storage, and a generic 500 reads like
+        // the whole app is broken rather than one file being gone.
+        abort_if(
+            ! Storage::exists($document->path),
+            410,
+            'This file is no longer in storage. It was uploaded before the workspace had permanent file storage, and will need uploading again.',
+        );
+
         return Storage::download($document->path, $document->name, [
             'Content-Type' => $document->mime ?? 'application/octet-stream',
         ]);

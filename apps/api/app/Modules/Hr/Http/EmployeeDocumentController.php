@@ -74,6 +74,15 @@ class EmployeeDocumentController extends ApiController
         $this->authorizeRead($request, $employee);
         abort_if($document->employee_id !== $employee->id, 404);
 
+        // The row can outlive the file: on a host with no persistent storage
+        // configured, a deploy takes the disk with it. Saying so beats a
+        // generic 500 that reads like the whole app is broken.
+        abort_if(
+            ! Storage::exists($document->path),
+            410,
+            'This file is no longer in storage. It was uploaded before the workspace had permanent file storage, and will need uploading again.',
+        );
+
         return Storage::download($document->path, $document->name, [
             'Content-Type' => $document->mime ?? 'application/octet-stream',
         ]);
