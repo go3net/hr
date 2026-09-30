@@ -20,6 +20,12 @@ use Illuminate\Support\Facades\DB;
  * controller sits behind the platform-owner middleware. It reads account and
  * billing facts plus headcount — never a customer's employees, salaries,
  * documents or messages. Tenant isolation still protects those.
+ *
+ * Note the asymmetry in the queries below: the per-tenant models carry the
+ * tenant scope and need `withoutGlobalScopes()` to be counted across
+ * workspaces, but Tenant itself never had that scope — its only global scope
+ * is soft deletion. Dropping scopes there would resurrect deleted workspaces
+ * into the list and the totals, so those queries are left alone.
  */
 class PlatformController extends ApiController
 {
@@ -27,7 +33,7 @@ class PlatformController extends ApiController
 
     public function summary(): JsonResponse
     {
-        $tenants = Tenant::query()->withoutGlobalScopes()->get(['id', 'status', 'trial_ends_at']);
+        $tenants = Tenant::query()->get(['id', 'status', 'trial_ends_at']);
 
         $paidThisMonth = BillingPayment::query()
             ->withoutGlobalScopes()
@@ -68,7 +74,6 @@ class PlatformController extends ApiController
         // Counts come from subqueries so one workspace with many staff cannot
         // slow the whole list down.
         $tenants = Tenant::query()
-            ->withoutGlobalScopes()
             ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('subdomain', 'like', "%{$search}%")))
@@ -178,9 +183,61 @@ class PlatformController extends ApiController
         return $this->respond($this->present($this->withCounts($tenant->fresh())));
     }
 
+    /**
+     * Erase a workspace and everything in it.
+     *
+     * For the abandoned signups and smoke tests that otherwise clutter the
+     * list forever, and for an erasure request. Every tenant_id foreign key
+     * cascades, so removing the row removes the workspace's people, payroll,
+     * documents and history with it. There is no undo, which is why the
+     * caller has to name the subdomain back.
+     *
+     * Suspending is the reversible option and stays the right one for a
+     * customer in arrears.
+     */
+    public function destroy(Request $request, string $publicId): JsonResponse
+    {
+        $tenant = $this->findTenant($publicId);
+
+        $request->validate(['confirm' => ['required', 'string']]);
+
+        abort_if(
+            $request->input('confirm') !== $tenant->subdomain,
+            422,
+            "Type the workspace's subdomain to confirm.",
+        );
+
+        // Deleting the workspace you are signed in through would take your own
+        // account with it, mid-request.
+        abort_if(
+            $tenant->id === $request->user()->tenant_id,
+            422,
+            'You cannot delete the workspace you are signed in to.',
+        );
+
+        // Money that changed hands stays on the books. Cancel these instead.
+        $paid = BillingPayment::query()->withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)->where('status', 'paid')->exists();
+
+        abort_if($paid, 422, 'This workspace has paid before — cancel it rather than erasing the record.');
+
+        // Written before the delete, and into the owner's own tenant, so the
+        // record of the erasure is not erased along with its subject.
+        AuditLog::record('platform.workspace.deleted', null, [
+            'workspace' => $tenant->name,
+            'subdomain' => $tenant->subdomain,
+            'created_at' => $tenant->created_at->toDateString(),
+            'by' => $request->user()->email,
+        ]);
+
+        $tenant->forceDelete();
+
+        return $this->respond(['deleted' => true]);
+    }
+
     private function findTenant(string $publicId): Tenant
     {
-        return Tenant::query()->withoutGlobalScopes()->where('public_id', $publicId)->firstOrFail();
+        return Tenant::query()->where('public_id', $publicId)->firstOrFail();
     }
 
     private function withCounts(Tenant $tenant): Tenant
@@ -225,7 +282,6 @@ class PlatformController extends ApiController
     public function signups(): JsonResponse
     {
         $rows = Tenant::query()
-            ->withoutGlobalScopes()
             ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
             ->get(['created_at'])
             ->groupBy(fn ($t) => $t->created_at->format('Y-m'));

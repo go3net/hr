@@ -2286,3 +2286,23 @@ export function useUpdateWorkspace() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform"] }),
   });
 }
+
+/**
+ * Erase a workspace. The confirmation is the workspace's own subdomain,
+ * matched server-side — there is no undo, so a stray click cannot do it.
+ */
+export function useDeleteWorkspace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, confirm }: { id: string; confirm: string }) =>
+      destroy(`/platform/workspaces/${id}`, { confirm }),
+    onSuccess: (_data, { id }) => {
+      // Drop the detail query outright rather than invalidating it — an
+      // invalidated query refetches, and refetching a workspace that no
+      // longer exists just puts a 404 in the console.
+      queryClient.removeQueries({ queryKey: ["platform", "workspace", id] });
+      queryClient.invalidateQueries({ queryKey: ["platform"] });
+    },
+  });
+}
