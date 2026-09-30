@@ -453,6 +453,27 @@ export function useAttendanceToday() {
   });
 }
 
+/**
+ * Past days. The board above it only ever shows today, which is right for a
+ * live board and wrong as the whole story — the records were being kept all
+ * along, with nothing asking for them.
+ */
+export function useAttendanceHistory(params: {
+  from: string;
+  to: string;
+  employeeId?: string;
+  lateOnly?: boolean;
+}) {
+  const search = new URLSearchParams({ from: params.from, to: params.to, per_page: "100" });
+  if (params.employeeId) search.set("employee_id", params.employeeId);
+  if (params.lateOnly) search.set("late", "1");
+
+  return useQuery({
+    queryKey: ["attendance", "history", params],
+    queryFn: () => get<AttendanceRow[]>(`/hr/attendance?${search}`).then((r) => r.data),
+  });
+}
+
 export function useClockIn() {
   const queryClient = useQueryClient();
   return useMutation({

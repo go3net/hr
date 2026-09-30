@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAttendanceToday, useBootstrap, useClockIn, useClockOut } from "@/hooks/use-api";
 import { WorkHoursDialog } from "./work-hours-dialog";
+import { AttendanceHistory } from "./attendance-history";
 import { ApiError } from "@/lib/api";
 
 function methodLabel(method: string): string {
@@ -24,6 +25,9 @@ export function AttendanceClient() {
   const { data: session } = useBootstrap();
   const permissions = session?.permissions ?? [];
   const canSetHours = permissions.includes("*") || permissions.includes("hr.employees.manage");
+  // The same rule the API applies: your own days are yours, the whole floor
+  // needs the permission.
+  const canViewAll = permissions.includes("*") || permissions.includes("hr.attendance.view");
   const { data, isPending } = useAttendanceToday();
   const clockIn = useClockIn();
   const clockOut = useClockOut();
@@ -159,7 +163,9 @@ export function AttendanceClient() {
                   <td className="px-4 py-2.5 text-muted-foreground">{row.office ?? "—"}</td>
                   <td className="px-4 py-2.5">
                     {row.is_late ? (
-                      <Badge variant="warning">Late · {row.minutes_late}m</Badge>
+                      <Badge variant="warning">
+                        {row.minutes_late > 0 ? `Late · ${row.minutes_late}m` : "Late"}
+                      </Badge>
                     ) : (
                       <Badge variant="success">On time</Badge>
                     )}
@@ -187,6 +193,8 @@ export function AttendanceClient() {
           </table>
         </div>
       </Card>
+
+      <AttendanceHistory canViewAll={canViewAll} />
     </div>
   );
 }

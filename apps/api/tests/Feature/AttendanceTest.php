@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AttendanceRecord;
 use App\Models\Employee;
 use App\Models\Office;
 use App\Models\WorkSchedule;
@@ -127,5 +128,63 @@ class AttendanceTest extends TestCase
         $this->actingAsTenantUser($user)
             ->postJson('/api/v1/hr/attendance/clock-in', ['method' => 'web'])
             ->assertUnprocessable();
+    }
+
+    public function test_past_days_stay_on_the_record_and_are_retrievable(): void
+    {
+        [$tenant, $user, $employee] = $this->setUpEmployee();
+
+        // Three days of history, plus today.
+        foreach ([3, 2, 1, 0] as $back) {
+            AttendanceRecord::create([
+                'tenant_id' => $tenant->id,
+                'employee_id' => $employee->id,
+                'work_date' => now()->subDays($back)->toDateString(),
+                'clocked_in_at' => now()->subDays($back)->setTime(8, 55),
+                'clocked_out_at' => now()->subDays($back)->setTime(17, 5),
+                'is_late' => $back === 2,
+                'method' => 'web',
+            ]);
+        }
+
+        // Today's view is deliberately just today — that is not where history
+        // lives, and reading it as "there is no past record" is the bug this
+        // guards against.
+        $today = $this->actingAsTenantUser($user)
+            ->getJson('/api/v1/hr/attendance/today')
+            ->assertOk()
+            ->json('data.records');
+
+        $this->assertCount(1, $today);
+
+        // The full list keeps every day.
+        $all = $this->actingAsTenantUser($user)
+            ->getJson('/api/v1/hr/attendance')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(4, $all);
+        $this->assertSame(now()->toDateString(), $all[0]['work_date'], 'newest first');
+
+        // A date range narrows it without losing anything outside the window.
+        $window = $this->actingAsTenantUser($user)
+            ->getJson('/api/v1/hr/attendance?from='.now()->subDays(2)->toDateString().'&to='.now()->subDay()->toDateString())
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(2, $window);
+        $this->assertEqualsCanonicalizing(
+            [now()->subDays(2)->toDateString(), now()->subDay()->toDateString()],
+            array_column($window, 'work_date'),
+        );
+
+        // And the late filter still reaches back through history.
+        $late = $this->actingAsTenantUser($user)
+            ->getJson('/api/v1/hr/attendance?late=1')
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $late);
+        $this->assertSame(now()->subDays(2)->toDateString(), $late[0]['work_date']);
     }
 }
