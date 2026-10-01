@@ -234,7 +234,7 @@ isolation still applies to the owner, and
 
 | Topic | Note |
 |---|---|
-| Deploys | Every push to the tracked branch redeploys all five services; scope with Settings → "Watch paths" (`apps/api/**` for PHP services, `apps/web/**` for web) to avoid needless rebuilds |
+| Deploys | Deploys come from `.github/workflows/railway-deploy.yml` after CI passes on `main`, not from Railway's own push-to-deploy, so Settings → "Watch paths" has no effect on them. The workflow scopes each deploy itself: `apps/api/**` deploys api, worker, scheduler and reverb; `apps/web/**` deploys web; a commit touching neither (docs, the Flutter app, the README) deploys nothing. Any other path deploys everything, so an unrecognised change is never skipped by accident |
 | Proxy/HTTPS | Already handled — the API trusts `X-Forwarded-*` headers, so generated URLs are https |
 | Logs | Each service's Deployments tab; the worker's log is where queued mail/PDF/push failures appear |
 | Costs | Five small services + two plugins typically lands ~$15–35/mo depending on traffic; the worker and reverb idle cheaply |
