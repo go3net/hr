@@ -28,16 +28,38 @@ import json; print(json.load(open('$CONFIG'))['environmentId'])")}"
 TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-900}"
 POLL_SECONDS=15
 
+# Railway occasionally answers with something that is not JSON at all — an
+# empty body, or a gateway's HTML — and curl's own --retry does not cover that
+# because the request itself succeeded. Left unhandled it surfaces as a Python
+# stack trace and a deploy that fails for no stated reason, so retry on an
+# unparseable body and, if it never parses, say what actually came back.
 gql() {
   python3 - "$1" <<'PY' > /tmp/railway-query.json
 import json, sys
 print(json.dumps({"query": sys.argv[1]}))
 PY
-  curl -sS -X POST "$API" \
-    -H "Content-Type: application/json" \
-    -H "Project-Access-Token: $RAILWAY_TOKEN" \
-    --retry 3 --retry-delay 2 --retry-connrefused \
-    -d @/tmp/railway-query.json
+
+  local attempt body
+  for attempt in 1 2 3 4; do
+    body=$(curl -sS -X POST "$API" \
+      -H "Content-Type: application/json" \
+      -H "Project-Access-Token: $RAILWAY_TOKEN" \
+      --retry 3 --retry-delay 2 --retry-connrefused \
+      -d @/tmp/railway-query.json)
+
+    if printf '%s' "$body" | python3 -c "import json,sys; json.load(sys.stdin)" 2>/dev/null; then
+      printf '%s' "$body"
+      return 0
+    fi
+
+    echo "  … Railway returned a non-JSON response (attempt $attempt), retrying" >&2
+    sleep $((attempt * 5))
+  done
+
+  echo "✗ Railway kept returning something that is not JSON. Last response:" >&2
+  printf '%s\n' "${body:0:300}" >&2
+
+  return 1
 }
 
 # Reads a dotted path out of a GraphQL response, failing loudly if the
